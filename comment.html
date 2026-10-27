@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>線上校稿與修改留言板</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #0b1329;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .custom-input {
+      background-color: #060b18;
+      border: 1px solid #1e293b;
+      color: #f8fafc;
+    }
+    .custom-input:focus {
+      outline: none;
+      border-color: #0d9488;
+      box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+    }
+    .card-bg {
+      background-color: #070e20;
+      border: 1px solid #1e293b;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-6">
+
+  <div class="max-w-2xl mx-auto space-y-5">
+    
+    <!-- 標頭 -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div class="flex items-center gap-3">
+        <div class="text-2xl text-cyan-400">
+          <i class="fa-solid fa-comments"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            線上校稿與修改留言板
+          </h2>
+          <p class="text-xs text-slate-400">彰基單位負責人與設計廠商校稿專區</p>
+        </div>
+      </div>
+      <div class="px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-cyan-400 text-xs font-semibold">
+        <span id="comment-count">0</span> 則意見
+      </div>
+    </div>
+
+    <!-- 表單 -->
+    <form id="comment-form" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">單位 / 姓名 <span class="text-rose-400">*</span></label>
+          <input type="text" id="author" required placeholder="如：智慧醫院組 王組長" class="w-full px-3 py-2 text-sm rounded-lg custom-input">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">修改類別</label>
+          <select id="category" class="w-full px-3 py-2 text-sm rounded-lg custom-input cursor-pointer">
+            <option value="背板文字修正">背板文字修正</option>
+            <option value="圖片/視覺調整">圖片/視覺調整</option>
+            <option value="展架/動線調整">展架/動線調整</option>
+            <option value="設備/螢幕配置">設備/螢幕配置</option>
+            <option value="其他建議">其他建議</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">修改意見說明 <span class="text-rose-400">*</span></label>
+        <textarea id="content" rows="3" required placeholder="請詳細說明需調整位置、文字或設計細節..." class="w-full px-3 py-2 text-sm rounded-lg custom-input"></textarea>
+      </div>
+
+      <button type="submit" id="submit-btn" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm rounded-lg flex items-center justify-center gap-2 transition duration-200 shadow-lg shadow-emerald-900/20">
+        <i class="fa-solid fa-paper-plane text-xs"></i>
+        <span>送出校稿意見</span>
+      </button>
+    </form>
+
+    <!-- 留言列表 -->
+    <div id="comments-container" class="space-y-3 pt-2">
+      <div class="text-center py-6 text-slate-500 text-sm">
+        <i class="fa-solid fa-spinner fa-spin mr-2"></i> 載入留言中...
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ⚠️ 請替換為您部署後獲得的 GAS API 網址
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwH4OPWuN1hBtQEB2yTK3l9R8PA4B3gxzLkbDsHSGqqHbJgS62Qy4q8e1xryhRMS_b_BQ/exec";
+
+    // 從 URL 參數獲取 page_id (例如: comment.html?page=smart_hospital)
+    const urlParams = new URLSearchParams(window.location.search);
+    const pageId = urlParams.get('page') || 'default';
+
+    // 載入留言列表
+    async function loadComments() {
+      const container = document.getElementById('comments-container');
+      const countEl = document.getElementById('comment-count');
+      
+      try {
+        const response = await fetch(`${GAS_API_URL}?page=${encodeURIComponent(pageId)}`);
+        const res = await response.json();
+        
+        if (res.status === 'success') {
+          const comments = res.data;
+          countEl.innerText = comments.length;
+          
+          if (comments.length === 0) {
+            container.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs card-bg rounded-xl">目前尚無校稿意見，歡迎提出修改建議！</div>`;
+            return;
+          }
+
+          container.innerHTML = comments.map(c => `
+            <div class="card-bg p-3.5 rounded-xl space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-slate-100">${escapeHtml(c.author)}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-cyan-950 text-cyan-400 border border-cyan-800/50">
+                    ${escapeHtml(c.category)}
+                  </span>
+                </div>
+                <span class="text-slate-500 text-[11px]">${escapeHtml(c.timestamp)}</span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed pl-0.5">${escapeHtml(c.content)}</p>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        container.innerHTML = `<div class="text-center py-4 text-rose-400 text-xs">載入留言失敗，請確認 API 設定。</div>`;
+      }
+    }
+
+    // 送出留言
+    document.getElementById('comment-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const author = document.getElementById('author').value.trim();
+      const category = document.getElementById('category').value;
+      const content = document.getElementById('content').value.trim();
+
+      if (!author || !content) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 傳送中...`;
+
+      try {
+        await fetch(GAS_API_URL, {
+          method: 'POST',
+          mode: 'no-cors', // 避開 GAS CORS 限制
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            page_id: pageId,
+            author: author,
+            category: category,
+            content: content
+          })
+        });
+
+        // 清空輸入框並重新讀取
+        document.getElementById('content').value = '';
+        setTimeout(() => {
+          loadComments();
+          btn.disabled = false;
+          btn.innerHTML = `<i class="fa-solid fa-paper-plane text-xs"></i> <span>送出校稿意見</span>`;
+        }, 1200);
+
+      } catch (err) {
+        alert('送出失敗，請重試！');
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane text-xs"></i> <span>送出校稿意見</span>`;
+      }
+    });
+
+    function escapeHtml(str) {
+      return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // 初始載入
+    loadComments();
+  </script>
+</body>
+</html>
