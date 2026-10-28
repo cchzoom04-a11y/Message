@@ -8,7 +8,7 @@
 :root{--bg:#04182a;--line:#1e6782;--cyan:#54e7d5;--text:#eaf7ff;--muted:#a9c8d9;--amber:#e6ad52;--vendor:#f39c12}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0,#123c59 0,#04182a 60%) fixed;color:var(--text);font-family:Arial,"Noto Sans TC",sans-serif}
 button,input,textarea,select{font:inherit}button{cursor:pointer;border:1px solid #2d8297;border-radius:10px;background:#0b5268;color:#fff;padding:9px 13px}button:hover{filter:brightness(1.15)}button:disabled{opacity:.5;cursor:default}
-button.primary{background:linear-gradient(120deg,#13b9b2,#087b8c);border-color:var(--cyan)}button.ghost{background:transparent}button.danger{border-color:#a44752;background:#612b39;color:#fff}
+button.primary{background:linear-gradient(120deg,#13b9b2,#087b8c);border-color:var(--cyan)}button.ghost{background:transparent}button.danger{border-color:#a44752;background:#612b39}
 input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padding:9px;background:#fff;color:#17354a}
 .topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 4%;background:#06223aee;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
 .brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:19px;flex:1;min-width:220px}.logo{display:grid;place-items:center;width:40px;height:40px;border:2px solid var(--cyan);border-radius:50%;color:var(--cyan)}
@@ -38,11 +38,18 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 .comment{border-bottom:1px solid #dbe5eb;padding:8px 0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}.comment .m{display:flex;justify-content:space-between;gap:6px;color:#688399;font-size:11px;margin-bottom:2px}.unit{background:#e3eef6;border-radius:6px;padding:1px 6px;margin-right:5px;color:#214c73}
 .comment.sys-log{background:#eaf8ff;border-left:3px solid var(--cyan);padding-left:6px;margin-bottom:4px;border-radius:4px}
 .form{display:grid;gap:6px;margin-top:8px}.form .r{display:grid;grid-template-columns:1fr 1fr;gap:6px}.form button{background:#087b8c}.x{background:none!important;border:0;color:#a51e2a;padding:0 4px}
-.actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px}.actions button{color:#087184;background:#fff;border-color:#139ba6;font-size:12px;padding:7px 10px}.actions button.danger{color:#fff;background:#612b39;border-color:#a44752}
+.actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px}.actions button{color:#087184;background:#fff;border-color:#139ba6;font-size:12px;padding:7px 10px}.actions button.danger{color:#fff}
 .empty{padding:40px;text-align:center;color:var(--muted);grid-column:1/-1}.footer{text-align:center;color:#7198ab;font-size:12px;margin-top:22px}
 .mb{display:none;position:fixed;inset:0;z-index:100;background:#000c;align-items:center;justify-content:center;padding:16px}.mb.show{display:flex}.modal{width:min(620px,100%);max-height:90vh;overflow:auto;background:#f4f9fc;color:#15364d;border-radius:16px;padding:22px}
 .modal h2{margin-top:0}.modal label{display:block;font-size:13px;font-weight:bold;margin:12px 0 5px}.modal .act{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.modal .act button{color:#12364d}.modal .act .primary{color:#fff}.note{font-size:12px;color:#597589;line-height:1.5}
-.lb{display:none;position:fixed;inset:0;z-index:200;background:#020812f5;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}.lb.show{display:flex}.lb img{max-width:94vw;max-height:80vh;object-fit:contain}.lb .t{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.lb button{background:#0b4058}
+
+/* 圖檔放大 Lightbox 控制與定位優化 */
+.lb{display:none;position:fixed;inset:0;z-index:200;background:#020812f5;overflow:auto;padding:60px 20px 20px}.lb.show{display:flex;justify-content:center;align-items:center}
+.lb .t{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:210;display:flex;gap:8px;background:#06223ae6;padding:8px 14px;border-radius:30px;border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.5);backdrop-filter:blur(8px)}
+.lb .t button{background:#0b4058;font-size:13px;padding:6px 12px}
+.lb .img-wrapper{display:flex;justify-content:center;align-items:center;min-width:100%;min-height:100%;padding:20px}
+.lb img{max-width:90vw;max-height:80vh;object-fit:contain;transition:transform 0.15s ease-out;transform-origin:center center;cursor:grab}
+
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#062a44;border:1px solid var(--cyan);padding:10px 18px;border-radius:20px;z-index:300;display:none}#demo{display:none;background:#614a1c;color:#ffe3a3;padding:8px 14px;text-align:center;font-size:13px}.hidden{display:none!important}
 .breadcrumb{font-size:14px;color:var(--cyan);margin-bottom:10px}
 @media(max-width:1000px){.hero{grid-template-columns:1fr}.cards{grid-template-columns:1fr}}
@@ -90,7 +97,20 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 </main>
 
 <div class="mb" id="mb"><div class="modal"><h2 id="mTitle"></h2><div id="mBody"></div><div class="act"><button id="mCancel">取消</button><button class="primary" id="mOk">確認</button></div></div></div>
-<div class="lb" id="lb"><div class="t"><button id="zo">－ 縮小</button><button id="zr">重設</button><button id="zi">＋ 放大</button><button id="lc">關閉 ✕</button></div><img id="lbImg" alt=""></div>
+
+<!-- 圖片放大檢視對話框 (修復置頂控制按鈕列) -->
+<div class="lb" id="lb">
+  <div class="t">
+    <button id="zo">－ 縮小</button>
+    <button id="zr">重設</button>
+    <button id="zi">＋ 放大</button>
+    <button id="lc">關閉 ✕</button>
+  </div>
+  <div class="img-wrapper" id="lbImgWrapper">
+    <img id="lbImg" alt="圖檔放大">
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -454,7 +474,7 @@ function vendorEdit(id){
 function itemForm(x){
   return `<label>項目名稱</label><input id="iT" value="${esc(x.title||"")}">
     <label>歸屬分區</label>
-    <select id="iZ">${db.zones.map(z => `<option value="${z.id}" ${z.id===x.sectionId?'selected':''}>${z.level===1?'【主展區】':z.level===2?'　↳ ':'　　↳ '}${esc(z.name)}</option>`).join("")}</select>
+    <select id="iZ">${db.zones.map(z => `<option value="${z.id}" ${z.id===x.sectionId?'selected':''}>${z.level===1?'【主展區】':z.level===2?' ↳ ':'  ↳ '}${esc(z.name)}</option>`).join("")}</select>
     <label>Google Drive 圖片連結</label><input id="iU" value="${esc(x.imageUrl||"")}">
     <label>版本碼</label><input id="iV" value="${esc(x.version||"V01")}">
     <label>狀態</label>
@@ -523,17 +543,38 @@ $("heroBtn").onclick = () => modal("設定全景圖", `
 
 $("refreshBtn").onclick = async () => { toast("重新整理中…", 0); await load(); toast("已同步最新資料"); };
 
-// Lightbox 圖檔放大
-function lightbox(u){ $("lbImg").src = u; zoom = 1; z_(); $("lb").classList.add("show"); }
-function z_(){ $("lbImg").style.transform = `scale(${zoom})`; }
-$("zi").onclick = () => { zoom = Math.min(zoom + 0.25, 5); z_(); };
-$("zo").onclick = () => { zoom = Math.max(zoom - 0.25, 0.3); z_(); };
-$("zr").onclick = () => { zoom = 1; z_(); };
-$("lc").onclick = () => $("lb").classList.remove("show");
+// 圖檔放大 Lightbox 功能修復
+function lightbox(u){
+  $("lbImg").src = u;
+  zoom = 1;
+  z_();
+  $("lb").classList.add("show");
+}
+
+function z_(){
+  $("lbImg").style.transform = `scale(${zoom})`;
+}
+
+$("zi").onclick = (e) => { e.stopPropagation(); zoom = Math.min(zoom + 0.3, 5); z_(); };
+$("zo").onclick = (e) => { e.stopPropagation(); zoom = Math.max(zoom - 0.3, 0.4); z_(); };
+$("zr").onclick = (e) => { e.stopPropagation(); zoom = 1; z_(); };
+$("lc").onclick = (e) => { e.stopPropagation(); $("lb").classList.remove("show"); };
+
+// 點擊背景空白處隨時關閉
+$("lb").addEventListener("click", (e) => {
+  if (e.target.id === "lb" || e.target.id === "lbImgWrapper") {
+    $("lb").classList.remove("show");
+  }
+});
+
+// 按下 ESC 鍵退出放大檢視
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    $("lb").classList.remove("show");
+  }
+});
 
 load();
 </script>
-</body>
-</html>
 </body>
 </html>
