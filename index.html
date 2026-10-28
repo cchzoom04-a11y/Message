@@ -1,187 +1,537 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
+<!doctype html>
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>線上校稿與修改留言板</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body {
-      background-color: #0b1329;
-      color: #e2e8f0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    .custom-input {
-      background-color: #060b18;
-      border: 1px solid #1e293b;
-      color: #f8fafc;
-    }
-    .custom-input:focus {
-      outline: none;
-      border-color: #0d9488;
-      box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
-    }
-    .card-bg {
-      background-color: #070e20;
-      border: 1px solid #1e293b;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>醫療科技展校稿平台</title>
+<style>
+:root{--bg:#04182a;--line:#1e6782;--cyan:#54e7d5;--text:#eaf7ff;--muted:#a9c8d9;--amber:#e6ad52;--vendor:#f39c12}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0,#123c59 0,#04182a 60%) fixed;color:var(--text);font-family:Arial,"Noto Sans TC",sans-serif}
+button,input,textarea,select{font:inherit}button{cursor:pointer;border:1px solid #2d8297;border-radius:10px;background:#0b5268;color:#fff;padding:9px 13px}button:hover{filter:brightness(1.15)}button:disabled{opacity:.5;cursor:default}
+button.primary{background:linear-gradient(120deg,#13b9b2,#087b8c);border-color:var(--cyan)}button.ghost{background:transparent}button.danger{border-color:#a44752;background:#612b39;color:#fff}
+input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padding:9px;background:#fff;color:#17354a}
+.topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 4%;background:#06223aee;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:19px;flex:1;min-width:220px}.logo{display:grid;place-items:center;width:40px;height:40px;border:2px solid var(--cyan);border-radius:50%;color:var(--cyan)}
+.brand small{display:block;font-size:12px;color:#9fc8d8;font-weight:400}.adminbar{display:none;gap:8px;align-items:center;flex-wrap:wrap}.adminbar.show{display:flex}.pill{color:#6de6b7;font-size:12px;border:1px solid #26775f;padding:6px 10px;border-radius:20px}.pill.vendor{color:#f39c12;border-color:#f39c12}
+.wrap{max-width:1440px;margin:auto;padding:20px 3% 50px}.panel{border:1px solid var(--line);background:linear-gradient(145deg,#0b2d49ee,#062039f5);border-radius:16px;box-shadow:0 10px 30px #0003}
+.banner{position:relative;height:clamp(200px,32vw,380px);overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#082a44}
+.banner img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}.banner .cap{position:absolute;left:0;right:0;bottom:0;padding:30px 22px 16px;background:linear-gradient(transparent,#04182acc);pointer-events:none}
+.banner h1{margin:4px 0 0;font-size:clamp(20px,2.8vw,32px)}.eyebrow{font-size:12px;letter-spacing:2px;color:var(--cyan)}.noimg{height:100%;display:grid;place-items:center;text-align:center;color:var(--muted);padding:20px}
+.hero{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(250px,.8fr);gap:18px;margin-top:18px}
+.zones{padding:18px}.zones h2,.stats h2{margin:0 0 12px;font-size:19px}.zone-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.zone{text-align:left;background:#0b4058;border:1px solid #287b8d;padding:12px;border-radius:12px;display:flex;flex-direction:column;gap:6px}.zone small{color:#a8d2dd;font-size:12px}
+.zone.active{background:#0f6a78;border-color:var(--cyan);box-shadow:0 0 0 2px #54e7d577}.bar{height:6px;background:#06243a;border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:#6de6b7}
+.badge{display:inline-block;background:#dc5656;color:#fff;border-radius:10px;padding:0 7px;font-size:11px;margin-left:4px}
+.subnav-box{margin-top:14px;padding:12px;background:#06243a;border-radius:10px;border:1px dashed #287b8d}
+.subnav-title{font-size:13px;color:var(--cyan);margin-bottom:8px;font-weight:bold}
+.subnav-tags{display:flex;gap:8px;flex-wrap:wrap}
+.subtag{background:#0b4058;color:var(--text);border:1px solid #287b8d;padding:6px 12px;border-radius:16px;font-size:13px;cursor:pointer}
+.subtag.active{background:var(--cyan);color:#04182a;font-weight:bold;border-color:var(--cyan)}
+.stats{padding:18px}.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#08233a;border:1px solid #245c76;border-radius:12px;padding:12px 6px;text-align:center}.stat span{font-size:12px;color:var(--muted)}.stat strong{display:block;font-size:28px;margin-top:6px}
+.stat:nth-child(1) strong{color:var(--amber)}.stat:nth-child(2) strong{color:#62d9f4}.stat:nth-child(3) strong{color:#6de6b7}
+.workspace{margin-top:20px;padding:20px}.head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.head h2{margin:0;font-size:23px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:16px}.card{background:#f3f8fb;color:#14314a;border-radius:14px;overflow:hidden}
+.card-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #d8e4ec;flex-wrap:wrap}.card-head h3{font-size:16px;margin:0;flex:1;min-width:120px}
+.tag{font-size:12px;padding:5px 9px;border-radius:20px;background:#dbeafe;color:#214c73;white-space:nowrap;border:0}.tag.pending{background:#ffe2e2;color:#a51e2a}.tag.done{background:#d4f8e8;color:#08784e}
+.card-content{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:12px;padding:12px}.preview{background:#dce9f0;border-radius:9px;min-height:200px;display:grid;place-items:center;overflow:hidden}.preview img{width:100%;max-height:340px;object-fit:cover;cursor:zoom-in}
+.placeholder{padding:18px;text-align:center;color:#40667b;font-size:13px}.meta{font-size:12px;color:#49677b;margin-top:8px}.thread h4{margin:0 0 6px;font-size:14px}.clist{max-height:230px;overflow:auto}
+.comment{border-bottom:1px solid #dbe5eb;padding:8px 0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}.comment .m{display:flex;justify-content:space-between;gap:6px;color:#688399;font-size:11px;margin-bottom:2px}.unit{background:#e3eef6;border-radius:6px;padding:1px 6px;margin-right:5px;color:#214c73}
+.comment.sys-log{background:#eaf8ff;border-left:3px solid var(--cyan);padding-left:6px;margin-bottom:4px;border-radius:4px}
+.form{display:grid;gap:6px;margin-top:8px}.form .r{display:grid;grid-template-columns:1fr 1fr;gap:6px}.form button{background:#087b8c}.x{background:none!important;border:0;color:#a51e2a;padding:0 4px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px}.actions button{color:#087184;background:#fff;border-color:#139ba6;font-size:12px;padding:7px 10px}.actions button.danger{color:#fff;background:#612b39;border-color:#a44752}
+.empty{padding:40px;text-align:center;color:var(--muted);grid-column:1/-1}.footer{text-align:center;color:#7198ab;font-size:12px;margin-top:22px}
+.mb{display:none;position:fixed;inset:0;z-index:100;background:#000c;align-items:center;justify-content:center;padding:16px}.mb.show{display:flex}.modal{width:min(620px,100%);max-height:90vh;overflow:auto;background:#f4f9fc;color:#15364d;border-radius:16px;padding:22px}
+.modal h2{margin-top:0}.modal label{display:block;font-size:13px;font-weight:bold;margin:12px 0 5px}.modal .act{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.modal .act button{color:#12364d}.modal .act .primary{color:#fff}.note{font-size:12px;color:#597589;line-height:1.5}
+.lb{display:none;position:fixed;inset:0;z-index:200;background:#020812f5;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}.lb.show{display:flex}.lb img{max-width:94vw;max-height:80vh;object-fit:contain}.lb .t{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.lb button{background:#0b4058}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#062a44;border:1px solid var(--cyan);padding:10px 18px;border-radius:20px;z-index:300;display:none}#demo{display:none;background:#614a1c;color:#ffe3a3;padding:8px 14px;text-align:center;font-size:13px}.hidden{display:none!important}
+.breadcrumb{font-size:14px;color:var(--cyan);margin-bottom:10px}
+@media(max-width:1000px){.hero{grid-template-columns:1fr}.cards{grid-template-columns:1fr}}
+@media(max-width:580px){.card-content{grid-template-columns:1fr}.wrap{padding:12px 10px 40px}}
+</style>
 </head>
-<body class="p-4 md:p-6">
-
-  <div class="max-w-2xl mx-auto space-y-5">
-    
-    <!-- 標頭 -->
-    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-      <div class="flex items-center gap-3">
-        <div class="text-2xl text-cyan-400">
-          <i class="fa-solid fa-comments"></i>
-        </div>
-        <div>
-          <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
-            線上校稿與修改留言板
-          </h2>
-          <p class="text-xs text-slate-400">彰基單位負責人與設計廠商校稿專區</p>
-        </div>
-      </div>
-      <div class="px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-cyan-400 text-xs font-semibold">
-        <span id="comment-count">0</span> 則意見
-      </div>
-    </div>
-
-    <!-- 表單 -->
-    <form id="comment-form" class="space-y-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">單位 / 姓名 <span class="text-rose-400">*</span></label>
-          <input type="text" id="author" required placeholder="如：智慧醫院組 王組長" class="w-full px-3 py-2 text-sm rounded-lg custom-input">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">修改類別</label>
-          <select id="category" class="w-full px-3 py-2 text-sm rounded-lg custom-input cursor-pointer">
-            <option value="背板文字修正">背板文字修正</option>
-            <option value="圖片/視覺調整">圖片/視覺調整</option>
-            <option value="展架/動線調整">展架/動線調整</option>
-            <option value="設備/螢幕配置">設備/螢幕配置</option>
-            <option value="其他建議">其他建議</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-xs font-medium text-slate-300 mb-1">修改意見說明 <span class="text-rose-400">*</span></label>
-        <textarea id="content" rows="3" required placeholder="請詳細說明需調整位置、文字或設計細節..." class="w-full px-3 py-2 text-sm rounded-lg custom-input"></textarea>
-      </div>
-
-      <button type="submit" id="submit-btn" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm rounded-lg flex items-center justify-center gap-2 transition duration-200 shadow-lg shadow-emerald-900/20">
-        <i class="fa-solid fa-paper-plane text-xs"></i>
-        <span>送出校稿意見</span>
-      </button>
-    </form>
-
-    <!-- 留言列表 -->
-    <div id="comments-container" class="space-y-3 pt-2">
-      <div class="text-center py-6 text-slate-500 text-sm">
-        <i class="fa-solid fa-spinner fa-spin mr-2"></i> 載入留言中...
-      </div>
-    </div>
-
+<body>
+<div id="demo">⚠ 尚未設定 GAS 網址，目前為「本機示範模式」（資料僅存於瀏覽器，總管理密碼 cch8730）。</div>
+<header class="topbar">
+  <div class="brand"><div class="logo">✚</div><div>醫療科技展校稿平台</div></div>
+  <div class="adminbar" id="adminbar">
+    <span class="pill" id="rolePill">管理者模式</span>
+    <button id="manageZonesBtn" class="master-only">展區結構管理</button>
+    <button id="heroBtn" class="master-only">設定全景圖</button>
+    <button id="addBtn" class="master-only">＋新增設計項目</button>
+    <button class="ghost" id="logoutBtn">登出</button>
   </div>
+  <button id="refreshBtn" class="ghost">↻ 重新整理</button>
+  <button id="loginBtn">登入管理員</button>
+</header>
+<main class="wrap">
+  <div class="banner" id="banner"></div>
+  <section class="hero">
+    <div class="panel zones">
+      <h2>展區導覽 <small style="color:var(--muted);font-weight:400;font-size:13px">點選主展區快速展開子頁面與分區</small></h2>
+      <div class="zone-grid" id="mainZoneGrid"></div>
+      <div id="subZoneContainer"></div>
+    </div>
+    <aside class="panel stats">
+      <h2 id="statTitle">校稿進度總覽</h2>
+      <div class="stat-grid">
+        <div class="stat"><span>待校稿</span><strong id="sP">0</strong></div>
+        <div class="stat"><span>修改中／待複核</span><strong id="sE">0</strong></div>
+        <div class="stat"><span>已確認</span><strong id="sD">0</strong></div>
+      </div>
+      <p style="margin:14px 0 0;font-size:13px;color:var(--muted)" id="statNote"></p>
+    </aside>
+  </section>
+  <section class="panel workspace" id="workspace">
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <div class="head"><h2 id="listTitle">設計校稿項目</h2><span style="color:var(--muted);font-size:12px">單位留言需填「單位」與「姓名」</span></div>
+    <div class="cards" id="cards"></div>
+  </section>
+  <div class="footer">醫療科技展校稿平台</div>
+</main>
 
-  <script>
-    // ⚠️ 請替換為您部署後獲得的 GAS API 網址
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwH4OPWuN1hBtQEB2yTK3l9R8PA4B3gxzLkbDsHSGqqHbJgS62Qy4q8e1xryhRMS_b_BQ/exec";
+<div class="mb" id="mb"><div class="modal"><h2 id="mTitle"></h2><div id="mBody"></div><div class="act"><button id="mCancel">取消</button><button class="primary" id="mOk">確認</button></div></div></div>
+<div class="lb" id="lb"><div class="t"><button id="zo">－ 縮小</button><button id="zr">重設</button><button id="zi">＋ 放大</button><button id="lc">關閉 ✕</button></div><img id="lbImg" alt=""></div>
+<div id="toast"></div>
 
-    // 從 URL 參數獲取 page_id (例如: comment.html?page=smart_hospital)
-    const urlParams = new URLSearchParams(window.location.search);
-    const pageId = urlParams.get('page') || 'default';
+<script>
+/* ★ 請在此貼上發布後的 GAS Web App 網址 ★ */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyA7NlixCRLa6o2GJVdHeP6CB5jXIZWO3A5WB1HEhnDWE-zWnisDt7QbZOmbY8GpdBG/exec";
 
-    // 載入留言列表
-    async function loadComments() {
-      const container = document.getElementById('comments-container');
-      const countEl = document.getElementById('comment-count');
-      
-      try {
-        const response = await fetch(`${GAS_API_URL}?page=${encodeURIComponent(pageId)}`);
-        const res = await response.json();
-        
-        if (res.status === 'success') {
-          const comments = res.data;
-          countEl.innerText = comments.length;
-          
-          if (comments.length === 0) {
-            container.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs card-bg rounded-xl">目前尚無校稿意見，歡迎提出修改建議！</div>`;
-            return;
-          }
+const DEFAULT_ZONES = [
+  {id:"smart", name:"智慧醫療", parentId:"root", level:1},
+  {id:"precision", name:"精準醫療", parentId:"root", level:1},
+  {id:"humanity", name:"醫學人文", parentId:"root", level:1},
+  {id:"simulation", name:"模擬訓練", parentId:"root", level:1},
+  {id:"stage", name:"舞台區", parentId:"root", level:1},
+  {id:"bigdata", name:"大數據中心", parentId:"smart", level:2},
+  {id:"incubation", name:"創新育成中心", parentId:"smart", level:2},
+  {id:"infection", name:"感控區", parentId:"incubation", level:3},
+  {id:"infant", name:"嬰幼輔具區", parentId:"incubation", level:3},
+  {id:"tcm", name:"中醫區", parentId:"incubation", level:3},
+  {id:"super", name:"院長室專區", parentId:"incubation", level:3}
+];
 
-          container.innerHTML = comments.map(c => `
-            <div class="card-bg p-3.5 rounded-xl space-y-2">
-              <div class="flex items-center justify-between text-xs">
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-slate-100">${escapeHtml(c.author)}</span>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-cyan-950 text-cyan-400 border border-cyan-800/50">
-                    ${escapeHtml(c.category)}
-                  </span>
-                </div>
-                <span class="text-slate-500 text-[11px]">${escapeHtml(c.timestamp)}</span>
-              </div>
-              <p class="text-xs text-slate-300 leading-relaxed pl-0.5">${escapeHtml(c.content)}</p>
-            </div>
-          `).join('');
-        }
-      } catch (err) {
-        container.innerHTML = `<div class="text-center py-4 text-rose-400 text-xs">載入留言失敗，請確認 API 設定。</div>`;
-      }
+const STATUS = ["待校稿", "修改中", "待複核", "已確認"];
+let db = { items: [], comments: [], zones: [], settings: {} };
+let selL1 = "smart", selL2 = "", selL3 = "";
+let pw = sessionStorage.getItem("pw") || "";
+let role = sessionStorage.getItem("role") || ""; // 'admin' 或 'vendor'
+let zoom = 1, onOk = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function driveId(u){u=String(u||"");const m=u.match(/\/d\/([\w-]+)|[?&]id=([\w-]+)/);return m?(m[1]||m[2]):(/^[\w-]{20,}$/.test(u)?u:"")}
+function img(u,w=1600){const id=driveId(u);return id?`https://drive.google.com/thumbnail?id=${id}&sz=w${w}`:(u||"")}
+function toast(t,ms=2200){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);if(ms)toast.t=setTimeout(()=>e.style.display="none",ms)}
+
+async function api(action, p={}){
+  if(!GAS_URL) return mock({action, password:pw, ...p});
+  const r = await fetch(GAS_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({action, password:pw, ...p})});
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error || "操作失敗");
+  return j;
+}
+
+async function load(){
+  try{
+    if(!GAS_URL){
+      db = JSON.parse(localStorage.demoDB || "null") || seedDemo();
+    } else {
+      const r = await fetch(GAS_URL + "?action=getAll");
+      const j = await r.json();
+      if(!j.ok) throw new Error(j.error);
+      db = j.data;
     }
+    if(!db.zones || !db.zones.length) db.zones = DEFAULT_ZONES;
+    render();
+  }catch(e){ toast("載入失敗：" + e.message, 5000); }
+}
 
-    // 送出留言
-    document.getElementById('comment-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('submit-btn');
-      const author = document.getElementById('author').value.trim();
-      const category = document.getElementById('category').value;
-      const content = document.getElementById('content').value.trim();
+function seedDemo(){
+  return {
+    items: [
+      {id:"i1", sectionId:"infection", title:"感控展區背景看板", description:"請校對文字與標誌位置", imageUrl:"", version:"V01", status:"待校稿"},
+      {id:"i2", sectionId:"tcm", title:"中醫海報展示圖", description:"字體大小需調整", imageUrl:"", version:"V01", status:"修改中"}
+    ],
+    comments: [],
+    zones: DEFAULT_ZONES,
+    settings: { heroImage:"", heroCaption:"展場全景圖" }
+  };
+}
 
-      if (!author || !content) return;
-
-      btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 傳送中...`;
-
-      try {
-        await fetch(GAS_API_URL, {
-          method: 'POST',
-          mode: 'no-cors', // 避開 GAS CORS 限制
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            page_id: pageId,
-            author: author,
-            category: category,
-            content: content
-          })
+function mock(r){
+  const d = JSON.parse(localStorage.demoDB || "null") || seedDemo();
+  const save = () => localStorage.demoDB = JSON.stringify(d);
+  const t = new Date().toLocaleString("zh-TW", {hour12:false});
+  
+  if(r.action === "addComment"){
+    const c = {id:"c"+Date.now(), itemId:r.itemId, unit:r.unit, name:r.name, text:r.text, time:t};
+    d.comments.push(c); save(); return {ok:true, comment:c};
+  }
+  if(r.action === "adminLogin"){
+    if(r.password === "cch8730") return {ok:true, role:"admin"};
+    if(r.password === "scdesign") return {ok:true, role:"vendor"};
+    throw new Error("密碼錯誤");
+  }
+  if(r.password !== "cch8730" && r.password !== "scdesign") throw new Error("無權限");
+  
+  if(r.action === "vendorUpdate"){
+    let it = d.items.find(i => i.id === r.id);
+    if(it){
+      let imageChanged = (r.imageUrl !== undefined && r.imageUrl !== it.imageUrl);
+      if(r.imageUrl !== undefined) it.imageUrl = r.imageUrl;
+      if(r.version !== undefined) it.version = r.version;
+      if(r.status !== undefined) it.status = r.status;
+      if(imageChanged){
+        d.comments.push({
+          id: "c" + Date.now(),
+          itemId: r.id,
+          unit: "系統紀錄",
+          name: r.password === "cch8730" ? "管理者" : "廠商",
+          text: `📷 更新了設計圖檔 (版本: ${r.version || 'V01'})`,
+          time: t
         });
-
-        // 清空輸入框並重新讀取
-        document.getElementById('content').value = '';
-        setTimeout(() => {
-          loadComments();
-          btn.disabled = false;
-          btn.innerHTML = `<i class="fa-solid fa-paper-plane text-xs"></i> <span>送出校稿意見</span>`;
-        }, 1200);
-
-      } catch (err) {
-        alert('送出失敗，請重試！');
-        btn.disabled = false;
-        btn.innerHTML = `<i class="fa-solid fa-paper-plane text-xs"></i> <span>送出校稿意見</span>`;
       }
-    });
-
-    function escapeHtml(str) {
-      return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
+    save(); return {ok:true};
+  }
+  if(r.action === "saveItem"){
+    let it = d.items.find(i => i.id === r.item.id);
+    if(it){
+      let imageChanged = (r.item.imageUrl && r.item.imageUrl !== it.imageUrl);
+      Object.assign(it, r.item);
+      if(imageChanged){
+        d.comments.push({
+          id: "c" + Date.now(), itemId: r.item.id, unit: "系統紀錄", name: "管理者",
+          text: `📷 更新了設計圖檔 (版本: ${r.item.version || 'V01'})`, time: t
+        });
+      }
+    } else {
+      const newId = "i" + Date.now();
+      d.items.push({...r.item, id: newId});
+      if(r.item.imageUrl){
+        d.comments.push({
+          id: "c" + Date.now(), itemId: newId, unit: "系統紀錄", name: "管理者",
+          text: `📷 上傳了設計圖檔 (版本: ${r.item.version || 'V01'})`, time: t
+        });
+      }
+    }
+    save(); return {ok:true};
+  }
+  if(r.action === "deleteItem"){ d.items = d.items.filter(i=>i.id!==r.id); save(); return {ok:true}; }
+  if(r.action === "deleteComment"){ d.comments = d.comments.filter(c=>c.id!==r.id); save(); return {ok:true}; }
+  if(r.action === "saveSettings"){ Object.assign(d.settings, r.settings); save(); return {ok:true}; }
+  if(r.action === "saveZones"){ d.zones = r.zones; save(); return {ok:true}; }
+  save(); return {ok:true};
+}
 
-    // 初始載入
-    loadComments();
-  </script>
+function getAllSubZoneIds(zoneId){
+  let result = [zoneId];
+  let children = db.zones.filter(z => z.parentId === zoneId);
+  children.forEach(c => {
+    result = result.concat(getAllSubZoneIds(c.id));
+  });
+  return result;
+}
+
+function getStatsForZone(zoneId){
+  const allIds = getAllSubZoneIds(zoneId);
+  const items = db.items.filter(i => allIds.includes(i.sectionId));
+  return {
+    total: items.length,
+    p: items.filter(i => i.status === "待校稿").length,
+    e: items.filter(i => i.status === "修改中" || i.status === "待複核").length,
+    d: items.filter(i => i.status === "已確認").length
+  };
+}
+
+function render(){
+  $("demo").style.display = GAS_URL ? "none" : "block";
+  
+  // Banner
+  const h = db.settings.heroImage, cap = db.settings.heroCaption || "展場全景圖";
+  $("banner").innerHTML = (h ? `<img src="${esc(img(h,2400))}" alt="展場全景圖" onclick="lightbox('${esc(img(h,2400))}')">` : 
+    `<div class="noimg"><div><div style="font-size:42px">🏛</div><b>展場全景圖</b><div style="font-size:13px;margin-top:6px">${role==='admin'?"請點上方「設定全景圖」連結":"尚未設定全景圖"}</div></div></div>`) + 
+    `<div class="cap"><div class="eyebrow">HEALTHCARE EXPO 2026</div><h1>${esc(cap)}</h1></div>`;
+
+  // 第一層展區選單
+  const l1Zones = db.zones.filter(z => z.level === 1 || z.parentId === "root");
+  if(!selL1 && l1Zones.length) selL1 = l1Zones[0].id;
+
+  $("mainZoneGrid").innerHTML = l1Zones.map(z => {
+    const st = getStatsForZone(z.id);
+    const active = (selL1 === z.id) ? "active" : "";
+    return `<button class="zone ${active}" onclick="selectL1('${z.id}')">
+      <b>${esc(z.name)}${st.p ? `<span class="badge">${st.p}</span>` : ""}</b>
+      <small>${st.total} 項設計</small>
+    </button>`;
+  }).join("");
+
+  // 第二、三層展區選單
+  let subHtml = "";
+  const l2Zones = db.zones.filter(z => z.parentId === selL1);
+  if(l2Zones.length){
+    subHtml += `<div class="subnav-box"><div class="subnav-title">📂 子頁面 / 中心</div><div class="subnav-tags">`;
+    subHtml += `<span class="subtag ${selL2===''?'active':''}" onclick="selectL2('')">全部中心</span>`;
+    l2Zones.forEach(z2 => {
+      const st = getStatsForZone(z2.id);
+      subHtml += `<span class="subtag ${selL2===z2.id?'active':''}" onclick="selectL2('${z2.id}')">${esc(z2.name)} (${st.total})${st.p ? `<span class="badge">${st.p}</span>`:''}</span>`;
+    });
+    subHtml += `</div>`;
+
+    if(selL2){
+      const l3Zones = db.zones.filter(z => z.parentId === selL2);
+      if(l3Zones.length){
+        subHtml += `<div class="subnav-title" style="margin-top:10px;">📌 細分區域</div><div class="subnav-tags">`;
+        subHtml += `<span class="subtag ${selL3===''?'active':''}" onclick="selectL3('')">全部區域</span>`;
+        l3Zones.forEach(z3 => {
+          const st = getStatsForZone(z3.id);
+          subHtml += `<span class="subtag ${selL3===z3.id?'active':''}" onclick="selectL3('${z3.id}')">${esc(z3.name)} (${st.total})${st.p ? `<span class="badge">${st.p}</span>`:''}</span>`;
+        });
+        subHtml += `</div>`;
+      }
+    }
+    subHtml += `</div>`;
+  }
+  $("subZoneContainer").innerHTML = subHtml;
+
+  // 確定當前篩選對象
+  let targetZoneId = selL3 || selL2 || selL1;
+  const activeIds = getAllSubZoneIds(targetZoneId);
+  const currentItems = db.items.filter(i => activeIds.includes(i.sectionId));
+
+  // 統計數字
+  const sP = currentItems.filter(i => i.status === "待校稿").length;
+  const sE = currentItems.filter(i => i.status === "修改中" || i.status === "待複核").length;
+  const sD = currentItems.filter(i => i.status === "已確認").length;
+  $("sP").textContent = sP; $("sE").textContent = sE; $("sD").textContent = sD;
+
+  // 麵包屑與標題
+  const z1Obj = db.zones.find(z => z.id === selL1);
+  const z2Obj = db.zones.find(z => z.id === selL2);
+  const z3Obj = db.zones.find(z => z.id === selL3);
+  let pathText = z1Obj ? z1Obj.name : "";
+  if(z2Obj) pathText += " ＞ " + z2Obj.name;
+  if(z3Obj) pathText += " ＞ " + z3Obj.name;
+  $("breadcrumb").textContent = "目前位置：" + pathText;
+  $("listTitle").textContent = pathText + " 校稿列表";
+
+  // 卡片列表渲染
+  $("cards").innerHTML = currentItems.length ? currentItems.map(card).join("") : `<div class="empty">此分區目前尚無設計項目。</div>`;
+
+  // 權限控制 UI 顯示
+  const isAdmin = (role === 'admin');
+  const isVendor = (role === 'vendor');
+  const isLogged = isAdmin || isVendor;
+
+  $("adminbar").classList.toggle("show", isLogged);
+  $("loginBtn").classList.toggle("hidden", isLogged);
+  
+  const rolePill = $("rolePill");
+  if(isAdmin){
+    rolePill.textContent = "總管理者模式";
+    rolePill.className = "pill";
+  } else if(isVendor){
+    rolePill.textContent = "廠商專用模式";
+    rolePill.className = "pill vendor";
+  }
+
+  document.querySelectorAll(".master-only").forEach(e => e.style.display = isAdmin ? "inline-block" : "none");
+
+  // 自動填入留言者歷史資料
+  const who = JSON.parse(localStorage.reviewer || "{}");
+  document.querySelectorAll("[id^=u-]").forEach(e => e.value = who.unit || "");
+  document.querySelectorAll("[id^=n-]").forEach(e => e.value = who.name || "");
+}
+
+function card(it){
+  const z = db.zones.find(x => x.id === it.sectionId) || {name:"未分類"};
+  const cs = db.comments.filter(c => c.itemId === it.id);
+  const u = img(it.imageUrl);
+  const sc = it.status === "已確認" ? "done" : (it.status === "待校稿" ? "pending" : "");
+  const canEdit = (role === 'admin' || role === 'vendor');
+
+  return `<article class="card">
+    <div class="card-head">
+      <span class="tag">${esc(z.name)}</span>
+      <h3>${esc(it.title)}</h3>
+      <span class="tag">${esc(it.version)}</span>
+      <span class="tag ${sc}">${esc(it.status)}</span>
+    </div>
+    <div class="card-content">
+      <div>
+        <div class="preview">
+          ${u ? `<img src="${esc(u)}" alt="${esc(it.title)}" loading="lazy" onclick="lightbox('${esc(img(it.imageUrl,2400))}')" onerror="this.outerHTML='<div class=placeholder>圖片無法載入</div>'">` : `<div class="placeholder"><div style="font-size:38px">▧</div>尚未設定圖片</div>`}
+        </div>
+        <div class="meta">${esc(it.description || "")}</div>
+      </div>
+      <div class="thread">
+        <h4>校稿留言（${cs.length}）</h4>
+        <div class="clist">
+          ${cs.length ? cs.map(c => {
+            const isSys = c.unit === "系統紀錄";
+            return `<div class="comment ${isSys ? 'sys-log' : ''}">
+              <div class="m">
+                <span><span class="unit">${esc(c.unit)}</span><b>${esc(c.name)}</b></span>
+                <span>${esc(c.time)}${role==='admin'?`<button class="x" onclick="delComment('${c.id}')">刪除</button>`:""}</span>
+              </div>
+              ${esc(c.text)}
+            </div>`;
+          }).join("") : `<div class="comment" style="color:#7890a0">尚無留言</div>`}
+        </div>
+        <div class="form">
+          <div class="r"><input id="u-${it.id}" placeholder="單位（必填）"><input id="n-${it.id}" placeholder="姓名（必填）"></div>
+          <textarea id="t-${it.id}" rows="2" placeholder="輸入校稿意見…"></textarea>
+          <button id="b-${it.id}" onclick="addComment('${it.id}')">送出留言</button>
+        </div>
+      </div>
+    </div>
+    ${canEdit ? `<div class="actions">
+      ${role === 'admin' ? `<button onclick="editItem('${it.id}')">完整編輯</button><button class="danger" onclick="delItem('${it.id}')">刪除</button>` : ''}
+      ${role === 'vendor' ? `<button onclick="vendorEdit('${it.id}')">修改圖片/版本/狀態</button>` : ''}
+    </div>` : ''}
+  </article>`;
+}
+
+function selectL1(id){ selL1 = id; selL2 = ""; selL3 = ""; render(); }
+function selectL2(id){ selL2 = id; selL3 = ""; render(); }
+function selectL3(id){ selL3 = id; render(); }
+
+async function addComment(id){
+  const unit = $("u-"+id).value.trim(), name = $("n-"+id).value.trim(), text = $("t-"+id).value.trim();
+  if(!unit || !name) return alert("請填寫「單位」與「姓名」");
+  if(!text) return alert("請輸入留言內容");
+  const b = $("b-"+id); b.disabled = true;
+  try{
+    const r = await api("addComment", {itemId:id, unit, name, text});
+    db.comments.push(r.comment);
+    localStorage.reviewer = JSON.stringify({unit, name});
+    render(); toast("留言已送出");
+  } catch(e){ alert(e.message); b.disabled = false; }
+}
+
+function modal(title, body, ok){ $("mTitle").textContent = title; $("mBody").innerHTML = body; $("mb").classList.add("show"); onOk = ok; }
+function close(){ $("mb").classList.remove("show"); onOk = null; }
+$("mCancel").onclick = close;
+$("mOk").onclick = () => onOk && onOk();
+
+// 登入驗證
+$("loginBtn").onclick = () => modal("使用者登入", `<label>請輸入管理密碼</label><input id="pin" type="password">`, async()=>{
+  pw = $("pin").value;
+  try{
+    const r = await api("adminLogin");
+    role = r.role;
+    sessionStorage.setItem("pw", pw);
+    sessionStorage.setItem("role", role);
+    close(); render(); toast("登入成功");
+  } catch(e){ pw = ""; role = ""; alert(e.message); }
+});
+
+$("logoutBtn").onclick = () => { pw = ""; role = ""; sessionStorage.clear(); render(); toast("已登出"); };
+
+// 廠商專用彈窗編輯
+function vendorEdit(id){
+  const it = db.items.find(i => i.id === id);
+  modal("廠商快速修改", `
+    <label>Google Drive 圖片連結</label><input id="vU" value="${esc(it.imageUrl||"")}">
+    <label>版本碼</label><input id="vV" value="${esc(it.version||"V01")}">
+    <label>狀態</label>
+    <select id="vS">${STATUS.map(s => `<option ${s===it.status?'selected':''}>${s}</option>`).join("")}</select>
+  `, async () => {
+    const imageUrl = $("vU").value.trim();
+    const version = $("vV").value.trim();
+    const status = $("vS").value;
+    close(); toast("更新中…", 0);
+    try {
+      await api("vendorUpdate", {id, imageUrl, version, status});
+      await load(); toast("廠商資料已更新");
+    } catch(e){ alert(e.message); }
+  });
+}
+
+// 總管理者新增/編輯項目
+function itemForm(x){
+  return `<label>項目名稱</label><input id="iT" value="${esc(x.title||"")}">
+    <label>歸屬分區</label>
+    <select id="iZ">${db.zones.map(z => `<option value="${z.id}" ${z.id===x.sectionId?'selected':''}>${z.level===1?'【主展區】':z.level===2?'　↳ ':'　　↳ '}${esc(z.name)}</option>`).join("")}</select>
+    <label>Google Drive 圖片連結</label><input id="iU" value="${esc(x.imageUrl||"")}">
+    <label>版本碼</label><input id="iV" value="${esc(x.version||"V01")}">
+    <label>狀態</label>
+    <select id="iS">${STATUS.map(s => `<option ${s===x.status?'selected':''}>${s}</option>`).join("")}</select>
+    <label>說明</label><textarea id="iD" rows="2">${esc(x.description||"")}</textarea>`;
+}
+
+$("addBtn").onclick = () => modal("新增設計項目", itemForm({sectionId: selL3 || selL2 || selL1, status:"待校稿"}), async () => {
+  const item = { id:"", title:$("iT").value.trim(), sectionId:$("iZ").value, imageUrl:$("iU").value.trim(), version:$("iV").value.trim(), status:$("iS").value, description:$("iD").value };
+  if(!item.title) return alert("請輸入項目名稱");
+  close(); toast("儲存中…", 0);
+  await api("saveItem", {item}); await load(); toast("已新增");
+});
+
+function editItem(id){
+  const it = db.items.find(i => i.id === id);
+  modal("完整編輯項目", itemForm(it), async () => {
+    const item = { id, title:$("iT").value.trim(), sectionId:$("iZ").value, imageUrl:$("iU").value.trim(), version:$("iV").value.trim(), status:$("iS").value, description:$("iD").value };
+    close(); toast("儲存中…", 0);
+    await api("saveItem", {item}); await load(); toast("已更新");
+  });
+}
+
+async function delItem(id){
+  if(confirm("確定刪除此項目與留言？")){
+    toast("刪除中…", 0); await api("deleteItem", {id}); await load(); toast("已刪除");
+  }
+}
+
+async function delComment(id){
+  if(confirm("確定刪除此紀錄/留言？")){
+    toast("刪除中…", 0); await api("deleteComment", {id}); await load(); toast("已刪除");
+  }
+}
+
+// 展區架構動態管理
+$("manageZonesBtn").onclick = () => {
+  let h = `<div style="max-height:300px;overflow:auto;"><table style="width:100%;text-align:left;"><tr><th>名稱</th><th>層級</th><th>父階 ID</th><th>ID</th></tr>`;
+  db.zones.forEach(z => {
+    h += `<tr><td>${esc(z.name)}</td><td>${z.level}</td><td>${esc(z.parentId)}</td><td><small>${esc(z.id)}</small></td></tr>`;
+  });
+  h += `</table></div><h4>新增分區</h4>
+    <label>區塊名稱</label><input id="nzName">
+    <label>父階展區</label><select id="nzParent"><option value="root">無（設為主展區 Level 1）</option>${db.zones.map(z=>`<option value="${z.id}">${z.name}</option>`).join("")}</select>`;
+  modal("展區階層管理", h, async () => {
+    const name = $("nzName").value.trim();
+    const parentId = $("nzParent").value;
+    if(!name) return alert("請填寫分區名稱");
+    const parent = db.zones.find(z => z.id === parentId);
+    const level = parent ? parent.level + 1 : 1;
+    const newZone = { id: "z_" + Date.now(), name, parentId, level };
+    const newZones = [...db.zones, newZone];
+    close(); toast("更新展區中…", 0);
+    await api("saveZones", {zones: newZones}); await load(); toast("展區已新增");
+  });
+};
+
+$("heroBtn").onclick = () => modal("設定全景圖", `
+  <label>Google Drive 圖片連結</label><input id="hUrl" value="${esc(db.settings.heroImage||"")}">
+  <label>標題</label><input id="hCap" value="${esc(db.settings.heroCaption||"展場全景圖")}">
+`, async () => {
+  const settings = { heroImage: $("hUrl").value.trim(), heroCaption: $("hCap").value.trim() };
+  close(); toast("更新中…", 0);
+  await api("saveSettings", {settings}); await load(); toast("設定已更新");
+});
+
+$("refreshBtn").onclick = async () => { toast("重新整理中…", 0); await load(); toast("已同步最新資料"); };
+
+// Lightbox 圖檔放大
+function lightbox(u){ $("lbImg").src = u; zoom = 1; z_(); $("lb").classList.add("show"); }
+function z_(){ $("lbImg").style.transform = `scale(${zoom})`; }
+$("zi").onclick = () => { zoom = Math.min(zoom + 0.25, 5); z_(); };
+$("zo").onclick = () => { zoom = Math.max(zoom - 0.25, 0.3); z_(); };
+$("zr").onclick = () => { zoom = 1; z_(); };
+$("lc").onclick = () => $("lb").classList.remove("show");
+
+load();
+</script>
 </body>
 </html>
