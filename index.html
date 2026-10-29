@@ -4,12 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>醫療科技展校稿平台</title>
+
+<!-- LINE 與社群分享卡片預覽設定 (Open Graph Tags) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="醫療科技展校稿平台">
+<meta property="og:description" content="此為校稿平台，校稿相關問題可在平台內留言">
+<meta property="og:site_name" content="醫療科技展校稿平台">
+
 <style>
 :root{--bg:#04182a;--line:#1e6782;--cyan:#54e7d5;--text:#eaf7ff;--muted:#a9c8d9;--amber:#e6ad52;--vendor:#f39c12}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0,#123c59 0,#04182a 60%) fixed;color:var(--text);font-family:Arial,"Noto Sans TC",sans-serif}
 button,input,textarea,select{font:inherit}button{cursor:pointer;border:1px solid #2d8297;border-radius:10px;background:#0b5268;color:#fff;padding:9px 13px}button:hover{filter:brightness(1.15)}button:disabled{opacity:.5;cursor:default}
 button.primary{background:linear-gradient(120deg,#13b9b2,#087b8c);border-color:var(--cyan)}button.ghost{background:transparent}button.danger{border-color:#a44752;background:#612b39}
-input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padding:9px;background:#fff;color:#17354a}
+
+/* 需求 1：輸入框文字再小一點 (12px) */
+input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padding:7px 9px;background:#fff;color:#17354a;font-size:12px}
+
 .topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 4%;background:#06223aee;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
 .brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:19px;flex:1;min-width:220px}.logo{display:grid;place-items:center;width:40px;height:40px;border:2px solid var(--cyan);border-radius:50%;color:var(--cyan)}
 .brand small{display:block;font-size:12px;color:#9fc8d8;font-weight:400}.adminbar{display:none;gap:8px;align-items:center;flex-wrap:wrap}.adminbar.show{display:flex}.pill{color:#6de6b7;font-size:12px;border:1px solid #26775f;padding:6px 10px;border-radius:20px}.pill.vendor{color:#f39c12;border-color:#f39c12}
@@ -31,12 +41,21 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 .stat:nth-child(1) strong{color:var(--amber)}.stat:nth-child(2) strong{color:#62d9f4}.stat:nth-child(3) strong{color:#6de6b7}
 .workspace{margin-top:20px;padding:20px}.head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.head h2{margin:0;font-size:23px}
 .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:16px}.card{background:#f3f8fb;color:#14314a;border-radius:14px;overflow:hidden}
-.card-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #d8e4ec;flex-wrap:wrap}.card-head h3{font-size:16px;margin:0;flex:1;min-width:120px}
+
+/* 需求 2：抬頭文字再稍微明顯一點 */
+.card-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #d8e4ec;flex-wrap:wrap;background:#eef6fc}
+.card-head h3{font-size:18px;font-weight:800;color:#0a2942;margin:0;flex:1;min-width:120px;letter-spacing:0.5px}
+
 .tag{font-size:12px;padding:5px 9px;border-radius:20px;background:#dbeafe;color:#214c73;white-space:nowrap;border:0}.tag.pending{background:#ffe2e2;color:#a51e2a}.tag.done{background:#d4f8e8;color:#08784e}
 .card-content{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:12px;padding:12px}.preview{background:#dce9f0;border-radius:9px;min-height:200px;display:grid;place-items:center;overflow:hidden}.preview img{width:100%;max-height:340px;object-fit:cover;cursor:zoom-in}
 .placeholder{padding:18px;text-align:center;color:#40667b;font-size:13px}.meta{font-size:12px;color:#49677b;margin-top:8px}.thread h4{margin:0 0 6px;font-size:14px}.clist{max-height:230px;overflow:auto}
-.comment{border-bottom:1px solid #dbe5eb;padding:8px 0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}.comment .m{display:flex;justify-content:space-between;gap:6px;color:#688399;font-size:11px;margin-bottom:2px}.unit{background:#e3eef6;border-radius:6px;padding:1px 6px;margin-right:5px;color:#214c73}
-.comment.sys-log{background:#eaf8ff;border-left:3px solid var(--cyan);padding-left:6px;margin-bottom:4px;border-radius:4px}
+
+/* 需求 1：留言文字再大一點 (15px) */
+.comment{border-bottom:1px solid #dbe5eb;padding:10px 0;font-size:15px;line-height:1.6;color:#0d263b;overflow-wrap:anywhere}
+.comment .m{display:flex;justify-content:space-between;gap:6px;color:#5a768d;font-size:12px;margin-bottom:4px}
+.unit{background:#d3e5f2;border-radius:6px;padding:2px 7px;margin-right:5px;color:#143d5e;font-weight:bold}
+.comment.sys-log{background:#eaf8ff;border-left:4px solid var(--cyan);padding-left:8px;margin-bottom:6px;border-radius:4px;font-size:14px}
+
 .form{display:grid;gap:6px;margin-top:8px}.form .r{display:grid;grid-template-columns:1fr 1fr;gap:6px}.form button{background:#087b8c}.x{background:none!important;border:0;color:#a51e2a;padding:0 4px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px}.actions button{color:#087184;background:#fff;border-color:#139ba6;font-size:12px;padding:7px 10px}.actions button.danger{color:#fff}
 .empty{padding:40px;text-align:center;color:var(--muted);grid-column:1/-1}.footer{text-align:center;color:#7198ab;font-size:12px;margin-top:22px}
@@ -98,7 +117,7 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 
 <div class="mb" id="mb"><div class="modal"><h2 id="mTitle"></h2><div id="mBody"></div><div class="act"><button id="mCancel">取消</button><button class="primary" id="mOk">確認</button></div></div></div>
 
-<!-- 圖片放大檢視對話框 (修復置頂控制按鈕列) -->
+<!-- 圖片放大檢視對話框 -->
 <div class="lb" id="lb">
   <div class="t">
     <button id="zo">－ 縮小</button>
@@ -114,7 +133,7 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 <div id="toast"></div>
 
 <script>
-/* ★ 請在此貼上發布後的 GAS Web App 網址 ★ */
+/* ★ 已設定為您的 GAS Web App 網址 ★ */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyA7NlixCRLa6o2GJVdHeP6CB5jXIZWO3A5WB1HEhnDWE-zWnisDt7QbZOmbY8GpdBG/exec";
 
 const DEFAULT_ZONES = [
@@ -140,6 +159,21 @@ let zoom = 1, onOk = null;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// 需求 5：留言時間簡化為 (2026-10-26 09:00) 格式
+function fmtTime(tStr){
+  if(!tStr) return "";
+  const d = new Date(tStr);
+  if(!isNaN(d.getTime())){
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${day} ${hh}:${mm}`;
+  }
+  return String(tStr);
+}
 
 function driveId(u){u=String(u||"");const m=u.match(/\/d\/([\w-]+)|[?&]id=([\w-]+)/);return m?(m[1]||m[2]):(/^[\w-]{20,}$/.test(u)?u:"")}
 function img(u,w=1600){const id=driveId(u);return id?`https://drive.google.com/thumbnail?id=${id}&sz=w${w}`:(u||"")}
@@ -183,11 +217,17 @@ function seedDemo(){
 function mock(r){
   const d = JSON.parse(localStorage.demoDB || "null") || seedDemo();
   const save = () => localStorage.demoDB = JSON.stringify(d);
-  const t = new Date().toLocaleString("zh-TW", {hour12:false});
+  const now = new Date();
+  const t = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   
   if(r.action === "addComment"){
     const c = {id:"c"+Date.now(), itemId:r.itemId, unit:r.unit, name:r.name, text:r.text, time:t};
-    d.comments.push(c); save(); return {ok:true, comment:c};
+    d.comments.push(c); 
+    if(r.autoConfirm){
+      let it = d.items.find(i => i.id === r.itemId);
+      if(it) it.status = "已確認";
+    }
+    save(); return {ok:true, comment:c};
   }
   if(r.action === "adminLogin"){
     if(r.password === "cch8730") return {ok:true, role:"admin"};
@@ -394,7 +434,7 @@ function card(it){
             return `<div class="comment ${isSys ? 'sys-log' : ''}">
               <div class="m">
                 <span><span class="unit">${esc(c.unit)}</span><b>${esc(c.name)}</b></span>
-                <span>${esc(c.time)}${role==='admin'?`<button class="x" onclick="delComment('${c.id}')">刪除</button>`:""}</span>
+                <span>${esc(fmtTime(c.time))}${role==='admin'?`<button class="x" onclick="delComment('${c.id}')">刪除</button>`:""}</span>
               </div>
               ${esc(c.text)}
             </div>`;
@@ -418,17 +458,46 @@ function selectL1(id){ selL1 = id; selL2 = ""; selL3 = ""; render(); }
 function selectL2(id){ selL2 = id; selL3 = ""; render(); }
 function selectL3(id){ selL3 = id; render(); }
 
+// 需求 4：新增特製 OK完稿 機制
 async function addComment(id){
   const unit = $("u-"+id).value.trim(), name = $("n-"+id).value.trim(), text = $("t-"+id).value.trim();
   if(!unit || !name) return alert("請填寫「單位」與「姓名」");
   if(!text) return alert("請輸入留言內容");
+
+  let isAutoConfirm = false;
+  // 檢查是否含有 OK完稿 (忽略大小寫)
+  if(/OK完稿/i.test(text)){
+    const confirmOk = confirm("是否確認已完成校稿？");
+    if(!confirmOk){
+      // 按下取消：完全退回，並清空輸入框，停止送出
+      $("t-"+id).value = "";
+      return;
+    }
+    isAutoConfirm = true;
+  }
+
   const b = $("b-"+id); b.disabled = true;
   try{
-    const r = await api("addComment", {itemId:id, unit, name, text});
-    db.comments.push(r.comment);
+    const r = await api("addComment", {itemId:id, unit, name, text, autoConfirm: isAutoConfirm});
+    
+    // 前端同步更新該項目狀態為「已確認」
+    if(isAutoConfirm){
+      let it = db.items.find(i => i.id === id);
+      if(it) it.status = "已確認";
+      // 確保將狀態改動寫入 GAS 後端
+      api("vendorUpdate", {id: id, status: "已確認"}).catch(()=>{});
+    }
+
+    if(r.comment) db.comments.push(r.comment);
     localStorage.reviewer = JSON.stringify({unit, name});
-    render(); toast("留言已送出");
-  } catch(e){ alert(e.message); b.disabled = false; }
+    
+    // 重新戴入完整最新資料，確保頁面數據正確
+    await load(); 
+    toast(isAutoConfirm ? "校稿已確認完成並留言！" : "留言已送出");
+  } catch(e){ 
+    alert(e.message); 
+    b.disabled = false; 
+  }
 }
 
 function modal(title, body, ok){ $("mTitle").textContent = title; $("mBody").innerHTML = body; $("mb").classList.add("show"); onOk = ok; }
@@ -543,7 +612,7 @@ $("heroBtn").onclick = () => modal("設定全景圖", `
 
 $("refreshBtn").onclick = async () => { toast("重新整理中…", 0); await load(); toast("已同步最新資料"); };
 
-// 圖檔放大 Lightbox 功能修復
+// 圖檔放大 Lightbox 功能
 function lightbox(u){
   $("lbImg").src = u;
   zoom = 1;
