@@ -73,6 +73,8 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 .breadcrumb{font-size:14px;color:var(--cyan);margin-bottom:10px}
 @media(max-width:1000px){.hero{grid-template-columns:1fr}.cards{grid-template-columns:1fr}}
 @media(max-width:580px){.card-content{grid-template-columns:1fr}.wrap{padding:12px 10px 40px}}
+.drag-tools{display:inline-flex;align-items:center;gap:2px}.drag-handle{cursor:grab;user-select:none;background:#cfe6f1;color:#15506a;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:bold}.drag-handle:active{cursor:grabbing}.mv{background:#cfe6f1!important;color:#15506a!important;border:0!important;padding:3px 7px!important;font-size:12px}
+.card.dragging{opacity:.35}.card.over-before{box-shadow:0 -5px 0 #54e7d5}.card.over-after{box-shadow:0 5px 0 #54e7d5}
 </style>
 </head>
 <body>
@@ -279,6 +281,7 @@ function mock(r){
     }
     save(); return {ok:true};
   }
+  if(r.action === "reorderItems"){ const m={}; d.items.forEach(i=>m[i.id]=i); const o=(r.ids||[]).filter(i=>m[i]).map(i=>m[i]); d.items.forEach(i=>{ if(!r.ids.includes(i.id)) o.push(i); }); d.items=o; save(); return {ok:true}; }
   if(r.action === "deleteItem"){ d.items = d.items.filter(i=>i.id!==r.id); save(); return {ok:true}; }
   if(r.action === "deleteComment"){ d.comments = d.comments.filter(c=>c.id!==r.id); save(); return {ok:true}; }
   if(r.action === "saveSettings"){ Object.assign(d.settings, r.settings); save(); return {ok:true}; }
@@ -412,8 +415,10 @@ function card(it){
   const sc = it.status === "已確認" ? "done" : (it.status === "待校稿" ? "pending" : "");
   const canEdit = (role === 'admin' || role === 'vendor');
 
-  return `<article class="card">
+  const isAdm = (role === 'admin');
+  return `<article class="card" data-id="${it.id}">
     <div class="card-head">
+      ${isAdm ? `<span class="drag-tools"><span class="drag-handle" draggable="true" title="按住拖曳可調整順序">☰ 拖曳</span><button class="mv" onclick="stepItem('${it.id}',-1)" title="前移">▲</button><button class="mv" onclick="stepItem('${it.id}',1)" title="後移">▼</button></span>` : ""}
       <span class="tag">${esc(z.name)}</span>
       <h3>${esc(it.title)}</h3>
       <span class="tag">${esc(it.version)}</span>
@@ -566,6 +571,48 @@ function editItem(id){
     await api("saveItem", {item}); await load(); toast("已更新");
   });
 }
+
+/* ===== 管理者：拖曳調整設計項目順序 ===== */
+let saveChain = Promise.resolve(), dragId = "";
+function moveItem(id, targetId, after){
+  if(id === targetId) return;
+  const from = db.items.findIndex(i => i.id === id); if(from < 0) return;
+  const [it] = db.items.splice(from, 1);
+  let to = db.items.findIndex(i => i.id === targetId); if(to < 0){ db.items.splice(from, 0, it); return; }
+  db.items.splice(after ? to + 1 : to, 0, it);
+  render();
+  const ids = db.items.map(i => i.id);
+  toast("儲存順序中…", 0);
+  saveChain = saveChain.then(() => api("reorderItems", {ids})).then(() => toast("順序已儲存")).catch(async e => { alert("順序儲存失敗：" + e.message); await load(); });
+}
+function stepItem(id, dir){
+  const ids = [...document.querySelectorAll("#cards .card[data-id]")].map(e => e.dataset.id);
+  const i = ids.indexOf(id), j = i + dir;
+  if(i < 0 || j < 0 || j >= ids.length) return;
+  moveItem(id, ids[j], dir > 0);
+}
+(function(){
+  const box = $("cards");
+  const clear = () => box.querySelectorAll(".dragging,.over-before,.over-after").forEach(e => e.classList.remove("dragging","over-before","over-after"));
+  box.addEventListener("dragstart", e => {
+    const h = e.target.closest && e.target.closest(".drag-handle"); if(!h || role !== "admin"){ return; }
+    const c = h.closest(".card"); dragId = c.dataset.id; e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", dragId); e.dataTransfer.setDragImage(c, 20, 20);
+    setTimeout(() => c.classList.add("dragging"), 0);
+  });
+  box.addEventListener("dragover", e => {
+    if(!dragId) return; const c = e.target.closest(".card"); if(!c) return;
+    e.preventDefault(); const r = c.getBoundingClientRect(), after = e.clientY > r.top + r.height / 2;
+    box.querySelectorAll(".over-before,.over-after").forEach(x => x.classList.remove("over-before","over-after"));
+    if(c.dataset.id !== dragId) c.classList.add(after ? "over-after" : "over-before");
+  });
+  box.addEventListener("drop", e => {
+    if(!dragId) return; const c = e.target.closest(".card"); if(!c) return; e.preventDefault();
+    const r = c.getBoundingClientRect(), after = e.clientY > r.top + r.height / 2, id = dragId; dragId = ""; clear();
+    moveItem(id, c.dataset.id, after);
+  });
+  box.addEventListener("dragend", () => { dragId = ""; clear(); });
+})();
 
 async function delItem(id){
   if(confirm("確定刪除此項目與留言？")){
