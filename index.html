@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>醫療科技展校稿平台</title>
 
-<!-- LINE 與社群分享卡片預覽設定 (Open Graph Tags) -->
+<!-- LINE 分享卡片預覽設定 -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="醫療科技展校稿平台">
 <meta property="og:description" content="此為校稿平台，校稿相關問題可在平台內留言">
@@ -17,7 +17,7 @@
 button,input,textarea,select{font:inherit}button{cursor:pointer;border:1px solid #2d8297;border-radius:10px;background:#0b5268;color:#fff;padding:9px 13px}button:hover{filter:brightness(1.15)}button:disabled{opacity:.5;cursor:default}
 button.primary{background:linear-gradient(120deg,#13b9b2,#087b8c);border-color:var(--cyan)}button.ghost{background:transparent}button.danger{border-color:#a44752;background:#612b39}
 
-/* 需求 1：輸入框文字再小一點 (12px) */
+/* 輸入框文字小一點 (12px) */
 input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padding:7px 9px;background:#fff;color:#17354a;font-size:12px}
 
 .topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 4%;background:#06223aee;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
@@ -40,9 +40,17 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 .stats{padding:18px}.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#08233a;border:1px solid #245c76;border-radius:12px;padding:12px 6px;text-align:center}.stat span{font-size:12px;color:var(--muted)}.stat strong{display:block;font-size:28px;margin-top:6px}
 .stat:nth-child(1) strong{color:var(--amber)}.stat:nth-child(2) strong{color:#62d9f4}.stat:nth-child(3) strong{color:#6de6b7}
 .workspace{margin-top:20px;padding:20px}.head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.head h2{margin:0;font-size:23px}
-.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:16px}.card{background:#f3f8fb;color:#14314a;border-radius:14px;overflow:hidden}
 
-/* 需求 2：抬頭文字再稍微明顯一點 */
+/* 卡片網格與拖拉樣式設定 */
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:16px}
+.card{background:#f3f8fb;color:#14314a;border-radius:14px;overflow:hidden;transition:transform 0.15s ease, box-shadow 0.15s ease;}
+.card.dragging{opacity:0.4;border:2px dashed var(--cyan);}
+.card.drag-over{border-top:4px solid var(--cyan); background:#e1f0fa;}
+
+/* 管理者模式下顯示拖拉提示指標 */
+.card-head.admin-draggable{cursor:grab;}
+.card-head.admin-draggable:active{cursor:grabbing;}
+
 .card-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #d8e4ec;flex-wrap:wrap;background:#eef6fc}
 .card-head h3{font-size:18px;font-weight:800;color:#0a2942;margin:0;flex:1;min-width:120px;letter-spacing:0.5px}
 
@@ -50,7 +58,7 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 .card-content{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:12px;padding:12px}.preview{background:#dce9f0;border-radius:9px;min-height:200px;display:grid;place-items:center;overflow:hidden}.preview img{width:100%;max-height:340px;object-fit:cover;cursor:zoom-in}
 .placeholder{padding:18px;text-align:center;color:#40667b;font-size:13px}.meta{font-size:12px;color:#49677b;margin-top:8px}.thread h4{margin:0 0 6px;font-size:14px}.clist{max-height:230px;overflow:auto}
 
-/* 需求 1：留言文字再大一點 (15px) */
+/* 留言文字加大 (15px) */
 .comment{border-bottom:1px solid #dbe5eb;padding:10px 0;font-size:15px;line-height:1.6;color:#0d263b;overflow-wrap:anywhere}
 .comment .m{display:flex;justify-content:space-between;gap:6px;color:#5a768d;font-size:12px;margin-bottom:4px}
 .unit{background:#d3e5f2;border-radius:6px;padding:2px 7px;margin-right:5px;color:#143d5e;font-weight:bold}
@@ -133,7 +141,7 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 <div id="toast"></div>
 
 <script>
-/* ★ 已設定為您的 GAS Web App 網址 ★ */
+/* ★ 請確保此處為您正確部署後的 GAS Web App 網址 ★ */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyA7NlixCRLa6o2GJVdHeP6CB5jXIZWO3A5WB1HEhnDWE-zWnisDt7QbZOmbY8GpdBG/exec";
 
 const DEFAULT_ZONES = [
@@ -154,13 +162,12 @@ const STATUS = ["待校稿", "修改中", "待複核", "已確認"];
 let db = { items: [], comments: [], zones: [], settings: {} };
 let selL1 = "smart", selL2 = "", selL3 = "";
 let pw = sessionStorage.getItem("pw") || "";
-let role = sessionStorage.getItem("role") || ""; // 'admin' 或 'vendor'
+let role = sessionStorage.getItem("role") || ""; 
 let zoom = 1, onOk = null;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-// 需求 5：留言時間簡化為 (2026-10-26 09:00) 格式
 function fmtTime(tStr){
   if(!tStr) return "";
   const d = new Date(tStr);
@@ -181,8 +188,12 @@ function toast(t,ms=2200){const e=$("toast");e.textContent=t;e.style.display="bl
 
 async function api(action, p={}){
   if(!GAS_URL) return mock({action, password:pw, ...p});
-  const r = await fetch(GAS_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({action, password:pw, ...p})});
-  const j = await r.json();
+  const res = await fetch(GAS_URL, {
+    method: "POST",
+    headers: {"Content-Type": "text/plain;charset=utf-8"},
+    body: JSON.stringify({action, password: pw, ...p})
+  });
+  const j = await res.json();
   if(!j.ok) throw new Error(j.error || "操作失敗");
   return j;
 }
@@ -192,8 +203,8 @@ async function load(){
     if(!GAS_URL){
       db = JSON.parse(localStorage.demoDB || "null") || seedDemo();
     } else {
-      const r = await fetch(GAS_URL + "?action=getAll");
-      const j = await r.json();
+      const res = await fetch(GAS_URL + "?action=getAll");
+      const j = await res.json();
       if(!j.ok) throw new Error(j.error);
       db = j.data;
     }
@@ -269,7 +280,7 @@ function mock(r){
       }
     } else {
       const newId = "i" + Date.now();
-      d.items.push({...r.item, id: newId});
+      d.items.unshift({...r.item, id: newId});
       if(r.item.imageUrl){
         d.comments.push({
           id: "c" + Date.now(), itemId: newId, unit: "系統紀錄", name: "管理者",
@@ -277,6 +288,17 @@ function mock(r){
         });
       }
     }
+    save(); return {ok:true};
+  }
+  if(r.action === "reorderItems"){
+    let map = {};
+    d.items.forEach(i => map[i.id] = i);
+    let newItems = [];
+    r.orderedIds.forEach(id => {
+      if(map[id]) { newItems.push(map[id]); delete map[id]; }
+    });
+    for(let id in map) { newItems.push(map[id]); }
+    d.items = newItems;
     save(); return {ok:true};
   }
   if(r.action === "deleteItem"){ d.items = d.items.filter(i=>i.id!==r.id); save(); return {ok:true}; }
@@ -309,13 +331,11 @@ function getStatsForZone(zoneId){
 function render(){
   $("demo").style.display = GAS_URL ? "none" : "block";
   
-  // Banner
   const h = db.settings.heroImage, cap = db.settings.heroCaption || "展場全景圖";
   $("banner").innerHTML = (h ? `<img src="${esc(img(h,2400))}" alt="展場全景圖" onclick="lightbox('${esc(img(h,2400))}')">` : 
     `<div class="noimg"><div><div style="font-size:42px">🏛</div><b>展場全景圖</b><div style="font-size:13px;margin-top:6px">${role==='admin'?"請點上方「設定全景圖」連結":"尚未設定全景圖"}</div></div></div>`) + 
     `<div class="cap"><div class="eyebrow">HEALTHCARE EXPO 2026</div><h1>${esc(cap)}</h1></div>`;
 
-  // 第一層展區選單
   const l1Zones = db.zones.filter(z => z.level === 1 || z.parentId === "root");
   if(!selL1 && l1Zones.length) selL1 = l1Zones[0].id;
 
@@ -328,7 +348,6 @@ function render(){
     </button>`;
   }).join("");
 
-  // 第二、三層展區選單
   let subHtml = "";
   const l2Zones = db.zones.filter(z => z.parentId === selL1);
   if(l2Zones.length){
@@ -356,18 +375,15 @@ function render(){
   }
   $("subZoneContainer").innerHTML = subHtml;
 
-  // 確定當前篩選對象
   let targetZoneId = selL3 || selL2 || selL1;
   const activeIds = getAllSubZoneIds(targetZoneId);
   const currentItems = db.items.filter(i => activeIds.includes(i.sectionId));
 
-  // 統計數字
   const sP = currentItems.filter(i => i.status === "待校稿").length;
   const sE = currentItems.filter(i => i.status === "修改中" || i.status === "待複核").length;
   const sD = currentItems.filter(i => i.status === "已確認").length;
   $("sP").textContent = sP; $("sE").textContent = sE; $("sD").textContent = sD;
 
-  // 麵包屑與標題
   const z1Obj = db.zones.find(z => z.id === selL1);
   const z2Obj = db.zones.find(z => z.id === selL2);
   const z3Obj = db.zones.find(z => z.id === selL3);
@@ -377,10 +393,13 @@ function render(){
   $("breadcrumb").textContent = "目前位置：" + pathText;
   $("listTitle").textContent = pathText + " 校稿列表";
 
-  // 卡片列表渲染
   $("cards").innerHTML = currentItems.length ? currentItems.map(card).join("") : `<div class="empty">此分區目前尚無設計項目。</div>`;
 
-  // 權限控制 UI 顯示
+  // 啟用管理者拖拉排序事件繫結
+  if(role === 'admin') {
+    initDragAndDrop();
+  }
+
   const isAdmin = (role === 'admin');
   const isVendor = (role === 'vendor');
   const isLogged = isAdmin || isVendor;
@@ -399,7 +418,6 @@ function render(){
 
   document.querySelectorAll(".master-only").forEach(e => e.style.display = isAdmin ? "inline-block" : "none");
 
-  // 自動填入留言者歷史資料
   const who = JSON.parse(localStorage.reviewer || "{}");
   document.querySelectorAll("[id^=u-]").forEach(e => e.value = who.unit || "");
   document.querySelectorAll("[id^=n-]").forEach(e => e.value = who.name || "");
@@ -411,11 +429,12 @@ function card(it){
   const u = img(it.imageUrl);
   const sc = it.status === "已確認" ? "done" : (it.status === "待校稿" ? "pending" : "");
   const canEdit = (role === 'admin' || role === 'vendor');
+  const isAdmin = (role === 'admin');
 
-  return `<article class="card">
-    <div class="card-head">
+  return `<article class="card" draggable="${isAdmin}" data-id="${it.id}">
+    <div class="card-head ${isAdmin ? 'admin-draggable' : ''}" title="${isAdmin ? '💡 提示：按住此處可直接拖拉調整卡片順序' : ''}">
       <span class="tag">${esc(z.name)}</span>
-      <h3>${esc(it.title)}</h3>
+      <h3>${esc(it.title)} ${isAdmin ? '<span style="font-size:11px;color:#1e6782;font-weight:normal;margin-left:6px;">⠿ 拖拉排序</span>' : ''}</h3>
       <span class="tag">${esc(it.version)}</span>
       <span class="tag ${sc}">${esc(it.status)}</span>
     </div>
@@ -454,22 +473,93 @@ function card(it){
   </article>`;
 }
 
+// 實作網頁端 HTML5 拖拉排序邏輯
+function initDragAndDrop(){
+  const container = $("cards");
+  let draggedCard = null;
+
+  container.querySelectorAll(".card").cardEl => {}; // placeholder
+
+  document.querySelectorAll("#cards .card").forEach(card => {
+    card.addEventListener("dragstart", (e) => {
+      draggedCard = card;
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+
+    card.addEventListener("dragend", () => {
+      card.classList.remove("dragging");
+      draggedCard = null;
+      container.querySelectorAll(".card").forEach(c => c.classList.remove("drag-over"));
+    });
+
+    card.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      if(card !== draggedCard) {
+        card.classList.add("drag-over");
+      }
+    });
+
+    card.addEventListener("dragleave", () => {
+      card.classList.remove("drag-over");
+    });
+
+    card.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      card.classList.remove("drag-over");
+      if(draggedCard && draggedCard !== card) {
+        // 調整畫面上 DOM 順序
+        const allCards = Array.from(container.querySelectorAll(".card"));
+        const draggedIdx = allCards.indexOf(draggedCard);
+        const targetIdx = allCards.indexOf(card);
+
+        if(draggedIdx < targetIdx) {
+          card.after(draggedCard);
+        } else {
+          card.before(draggedCard);
+        }
+
+        // 收集目前畫面上全部的新排序 id 清單
+        const newOrderedIds = Array.from(container.querySelectorAll(".card")).map(c => c.getAttribute("data-id"));
+        
+        // 同步更新記憶體 db.items 順序
+        let map = {};
+        db.items.forEach(i => map[i.id] = i);
+        let updatedItems = [];
+        newOrderedIds.forEach(id => {
+          if(map[id]) { updatedItems.push(map[id]); delete map[id]; }
+        });
+        for(let id in map) { updatedItems.push(map[id]); }
+        db.items = updatedItems;
+
+        // 傳送至後端 GAS 儲存排序
+        try {
+          toast("正在更新排序…", 0);
+          await api("reorderItems", { orderedIds: newOrderedIds });
+          toast("順序已更新儲存！");
+        } catch(err) {
+          alert("排序儲存失敗：" + err.message);
+          load(); // 失敗則還原
+        }
+      }
+    });
+  });
+}
+
 function selectL1(id){ selL1 = id; selL2 = ""; selL3 = ""; render(); }
 function selectL2(id){ selL2 = id; selL3 = ""; render(); }
 function selectL3(id){ selL3 = id; render(); }
 
-// 需求 4：新增特製 OK完稿 機制
 async function addComment(id){
   const unit = $("u-"+id).value.trim(), name = $("n-"+id).value.trim(), text = $("t-"+id).value.trim();
   if(!unit || !name) return alert("請填寫「單位」與「姓名」");
   if(!text) return alert("請輸入留言內容");
 
   let isAutoConfirm = false;
-  // 檢查是否含有 OK完稿 (忽略大小寫)
   if(/OK完稿/i.test(text)){
     const confirmOk = confirm("是否確認已完成校稿？");
     if(!confirmOk){
-      // 按下取消：完全退回，並清空輸入框，停止送出
       $("t-"+id).value = "";
       return;
     }
@@ -480,18 +570,15 @@ async function addComment(id){
   try{
     const r = await api("addComment", {itemId:id, unit, name, text, autoConfirm: isAutoConfirm});
     
-    // 前端同步更新該項目狀態為「已確認」
     if(isAutoConfirm){
       let it = db.items.find(i => i.id === id);
       if(it) it.status = "已確認";
-      // 確保將狀態改動寫入 GAS 後端
       api("vendorUpdate", {id: id, status: "已確認"}).catch(()=>{});
     }
 
     if(r.comment) db.comments.push(r.comment);
     localStorage.reviewer = JSON.stringify({unit, name});
     
-    // 重新戴入完整最新資料，確保頁面數據正確
     await load(); 
     toast(isAutoConfirm ? "校稿已確認完成並留言！" : "留言已送出");
   } catch(e){ 
@@ -505,7 +592,6 @@ function close(){ $("mb").classList.remove("show"); onOk = null; }
 $("mCancel").onclick = close;
 $("mOk").onclick = () => onOk && onOk();
 
-// 登入驗證
 $("loginBtn").onclick = () => modal("使用者登入", `<label>請輸入管理密碼</label><input id="pin" type="password">`, async()=>{
   pw = $("pin").value;
   try{
@@ -519,7 +605,6 @@ $("loginBtn").onclick = () => modal("使用者登入", `<label>請輸入管理�
 
 $("logoutBtn").onclick = () => { pw = ""; role = ""; sessionStorage.clear(); render(); toast("已登出"); };
 
-// 廠商專用彈窗編輯
 function vendorEdit(id){
   const it = db.items.find(i => i.id === id);
   modal("廠商快速修改", `
@@ -539,7 +624,6 @@ function vendorEdit(id){
   });
 }
 
-// 總管理者新增/編輯項目
 function itemForm(x){
   return `<label>項目名稱</label><input id="iT" value="${esc(x.title||"")}">
     <label>歸屬分區</label>
@@ -555,7 +639,7 @@ $("addBtn").onclick = () => modal("新增設計項目", itemForm({sectionId: sel
   const item = { id:"", title:$("iT").value.trim(), sectionId:$("iZ").value, imageUrl:$("iU").value.trim(), version:$("iV").value.trim(), status:$("iS").value, description:$("iD").value };
   if(!item.title) return alert("請輸入項目名稱");
   close(); toast("儲存中…", 0);
-  await api("saveItem", {item}); await load(); toast("已新增");
+  await api("saveItem", {item}); await load(); toast("已新增至最上方");
 });
 
 function editItem(id){
@@ -579,7 +663,6 @@ async function delComment(id){
   }
 }
 
-// 展區架構動態管理
 $("manageZonesBtn").onclick = () => {
   let h = `<div style="max-height:300px;overflow:auto;"><table style="width:100%;text-align:left;"><tr><th>名稱</th><th>層級</th><th>父階 ID</th><th>ID</th></tr>`;
   db.zones.forEach(z => {
@@ -612,7 +695,6 @@ $("heroBtn").onclick = () => modal("設定全景圖", `
 
 $("refreshBtn").onclick = async () => { toast("重新整理中…", 0); await load(); toast("已同步最新資料"); };
 
-// 圖檔放大 Lightbox 功能
 function lightbox(u){
   $("lbImg").src = u;
   zoom = 1;
@@ -629,14 +711,12 @@ $("zo").onclick = (e) => { e.stopPropagation(); zoom = Math.max(zoom - 0.3, 0.4)
 $("zr").onclick = (e) => { e.stopPropagation(); zoom = 1; z_(); };
 $("lc").onclick = (e) => { e.stopPropagation(); $("lb").classList.remove("show"); };
 
-// 點擊背景空白處隨時關閉
 $("lb").addEventListener("click", (e) => {
   if (e.target.id === "lb" || e.target.id === "lbImgWrapper") {
     $("lb").classList.remove("show");
   }
 });
 
-// 按下 ESC 鍵退出放大檢視
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     $("lb").classList.remove("show");
