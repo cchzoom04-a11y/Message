@@ -63,11 +63,12 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 .modal h2{margin-top:0}.modal label{display:block;font-size:13px;font-weight:bold;margin:12px 0 5px}.modal .act{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.modal .act button{color:#12364d}.modal .act .primary{color:#fff}.note{font-size:12px;color:#597589;line-height:1.5}
 
 /* 圖檔放大 Lightbox 控制與定位優化 */
-.lb{display:none;position:fixed;inset:0;z-index:200;background:#020812f5;overflow:auto;padding:60px 20px 20px}.lb.show{display:flex;justify-content:center;align-items:center}
+.lb{display:none;position:fixed;inset:0;z-index:200;background:#020812f5;overflow:hidden;padding:0}.lb.show{display:flex;justify-content:center;align-items:center}
 .lb .t{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:210;display:flex;gap:8px;background:#06223ae6;padding:8px 14px;border-radius:30px;border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.5);backdrop-filter:blur(8px)}
 .lb .t button{background:#0b4058;font-size:13px;padding:6px 12px}
-.lb .img-wrapper{display:flex;justify-content:center;align-items:center;min-width:100%;min-height:100%;padding:20px}
-.lb img{max-width:90vw;max-height:80vh;object-fit:contain;transition:transform 0.15s ease-out;transform-origin:center center;cursor:grab}
+.lb .img-wrapper{display:flex;justify-content:center;align-items:center;width:100vw;height:100vh;overflow:hidden;position:relative;cursor:grab}
+.lb .img-wrapper:active{cursor:grabbing}
+.lb img{max-width:90vw;max-height:80vh;object-fit:contain;transition:transform 0.05s linear;transform-origin:center center;user-select:none;-webkit-user-drag:none}
 
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#062a44;border:1px solid var(--cyan);padding:10px 18px;border-radius:20px;z-index:300;display:none}#demo{display:none;background:#614a1c;color:#ffe3a3;padding:8px 14px;text-align:center;font-size:13px}.hidden{display:none!important}
 .breadcrumb{font-size:14px;color:var(--cyan);margin-bottom:10px}
@@ -158,6 +159,9 @@ let selL1 = "smart", selL2 = "", selL3 = "";
 let pw = sessionStorage.getItem("pw") || "";
 let role = sessionStorage.getItem("role") || ""; // 'admin' 或 'vendor'
 let zoom = 1, onOk = null;
+
+// Lightbox 上下左右移動 (Pan) 變數
+let panX = 0, panY = 0, isDragging = false, startX = 0, startY = 0;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -659,35 +663,98 @@ $("heroBtn").onclick = () => modal("設定全景圖", `
 
 $("refreshBtn").onclick = async () => { toast("重新整理中…", 0); await load(); toast("已同步最新資料"); };
 
-// 圖檔放大 Lightbox 功能
+/* ===== 圖檔放大 Lightbox：平移 (Pan) 與縮放控制 ===== */
+function updateTransform() {
+  const imgEl = $("lbImg");
+  imgEl.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+}
+
 function lightbox(u){
   $("lbImg").src = u;
   zoom = 1;
-  z_();
+  panX = 0;
+  panY = 0;
+  updateTransform();
   $("lb").classList.add("show");
 }
 
-function z_(){
-  $("lbImg").style.transform = `scale(${zoom})`;
+function closeLightbox() {
+  $("lb").classList.remove("show");
+  $("lbImg").src = "";
 }
 
-$("zi").onclick = (e) => { e.stopPropagation(); zoom = Math.min(zoom + 0.3, 5); z_(); };
-$("zo").onclick = (e) => { e.stopPropagation(); zoom = Math.max(zoom - 0.3, 0.4); z_(); };
-$("zr").onclick = (e) => { e.stopPropagation(); zoom = 1; z_(); };
-$("lc").onclick = (e) => { e.stopPropagation(); $("lb").classList.remove("show"); };
+$("zi").onclick = (e) => { e.stopPropagation(); zoom = Math.min(zoom + 0.3, 5); updateTransform(); };
+$("zo").onclick = (e) => { 
+  e.stopPropagation(); 
+  zoom = Math.max(zoom - 0.3, 0.5); 
+  if(zoom === 1) { panX = 0; panY = 0; }
+  updateTransform(); 
+};
+$("zr").onclick = (e) => { e.stopPropagation(); zoom = 1; panX = 0; panY = 0; updateTransform(); };
+$("lc").onclick = (e) => { e.stopPropagation(); closeLightbox(); };
 
-// 點擊背景空白處隨時關閉
+// 點擊背景空白處關閉
 $("lb").addEventListener("click", (e) => {
   if (e.target.id === "lb" || e.target.id === "lbImgWrapper") {
-    $("lb").classList.remove("show");
+    closeLightbox();
   }
 });
 
-// 按下 ESC 鍵退出放大檢視
+// ESC 鍵關閉
 window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    $("lb").classList.remove("show");
+  if (e.key === "Escape") closeLightbox();
+});
+
+// 滑鼠滾輪縮放圖片
+$("lbImgWrapper").addEventListener("wheel", (e) => {
+  e.preventDefault();
+  if(e.deltaY < 0) {
+    zoom = Math.min(zoom + 0.2, 5);
+  } else {
+    zoom = Math.max(zoom - 0.2, 0.5);
+    if(zoom === 1) { panX = 0; panY = 0; }
   }
+  updateTransform();
+}, { passive: false });
+
+// 平移拖曳事件 (滑鼠與觸控)
+const wrapper = $("lbImgWrapper");
+
+wrapper.addEventListener("mousedown", (e) => {
+  if(e.target.tagName === 'BUTTON') return;
+  isDragging = true;
+  startX = e.clientX - panX;
+  startY = e.clientY - panY;
+});
+
+window.addEventListener("mousemove", (e) => {
+  if(!isDragging) return;
+  panX = e.clientX - startX;
+  panY = e.clientY - startY;
+  updateTransform();
+});
+
+window.addEventListener("mouseup", () => {
+  isDragging = false;
+});
+
+wrapper.addEventListener("touchstart", (e) => {
+  if(e.touches.length === 1) {
+    isDragging = true;
+    startX = e.touches[0].clientX - panX;
+    startY = e.touches[0].clientY - panY;
+  }
+}, { passive: true });
+
+window.addEventListener("touchmove", (e) => {
+  if(!isDragging || e.touches.length !== 1) return;
+  panX = e.touches[0].clientX - startX;
+  panY = e.touches[0].clientY - startY;
+  updateTransform();
+}, { passive: true });
+
+window.addEventListener("touchend", () => {
+  isDragging = false;
 });
 
 load();
