@@ -62,13 +62,15 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 .mb{display:none;position:fixed;inset:0;z-index:100;background:#000c;align-items:center;justify-content:center;padding:16px}.mb.show{display:flex}.modal{width:min(620px,100%);max-height:90vh;overflow:auto;background:#f4f9fc;color:#15364d;border-radius:16px;padding:22px}
 .modal h2{margin-top:0}.modal label{display:block;font-size:13px;font-weight:bold;margin:12px 0 5px}.modal .act{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.modal .act button{color:#12364d}.modal .act .primary{color:#fff}.note{font-size:12px;color:#597589;line-height:1.5}
 
-/* 圖檔放大 Lightbox 控制與定位優化 */
-.lb{display:none;position:fixed;inset:0;z-index:200;background:#020812f5;overflow:hidden;padding:0}.lb.show{display:flex;justify-content:center;align-items:center}
-.lb .t{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:210;display:flex;gap:8px;background:#06223ae6;padding:8px 14px;border-radius:30px;border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.5);backdrop-filter:blur(8px)}
+/* 圖檔放大 Lightbox：以原圖解析度載入，縮放時重新取樣，文字保持清晰 */
+.lb{display:none;position:fixed;inset:0;z-index:200;background:#020812f5;overflow:hidden;padding:0}.lb.show{display:block}
+.lb .t{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:210;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:96vw;background:#06223ae6;padding:8px 14px;border-radius:30px;border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.5);backdrop-filter:blur(8px)}
 .lb .t button{background:#0b4058;font-size:13px;padding:6px 12px}
-.lb .img-wrapper{display:flex;justify-content:center;align-items:center;width:100vw;height:100vh;overflow:hidden;position:relative;cursor:grab}
+.lb .t .pct{font-size:13px;color:var(--cyan);min-width:52px;text-align:center}
+.lb .img-wrapper{width:100vw;height:100vh;overflow:hidden;position:relative;cursor:grab;touch-action:none}
 .lb .img-wrapper:active{cursor:grabbing}
-.lb img{max-width:90vw;max-height:80vh;object-fit:contain;transition:transform 0.05s linear;transform-origin:center center;user-select:none;-webkit-user-drag:none}
+.lb img{position:absolute;left:50%;top:50%;max-width:none!important;max-height:none!important;transform-origin:center center;user-select:none;-webkit-user-drag:none;image-rendering:auto;display:none}
+.lb .loading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--cyan);font-size:15px;background:#06223ae6;border:1px solid var(--line);padding:10px 18px;border-radius:20px;pointer-events:none;display:none}
 
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#062a44;border:1px solid var(--cyan);padding:10px 18px;border-radius:20px;z-index:300;display:none}#demo{display:none;background:#614a1c;color:#ffe3a3;padding:8px 14px;text-align:center;font-size:13px}.hidden{display:none!important}
 .breadcrumb{font-size:14px;color:var(--cyan);margin-bottom:10px}
@@ -124,12 +126,15 @@ input,textarea,select{width:100%;border:1px solid #b9cbd6;border-radius:8px;padd
 <div class="lb" id="lb">
   <div class="t">
     <button id="zo">－ 縮小</button>
-    <button id="zr">重設</button>
+    <span class="pct" id="zpct">100%</span>
     <button id="zi">＋ 放大</button>
+    <button id="zf">符合畫面</button>
+    <button id="z1">原始大小</button>
     <button id="lc">關閉 ✕</button>
   </div>
   <div class="img-wrapper" id="lbImgWrapper">
     <img id="lbImg" alt="圖檔放大">
+    <div class="loading" id="lbLoading">原圖載入中…</div>
   </div>
 </div>
 
@@ -158,10 +163,7 @@ let db = { items: [], comments: [], zones: [], settings: {} };
 let selL1 = "smart", selL2 = "", selL3 = "";
 let pw = sessionStorage.getItem("pw") || "";
 let role = sessionStorage.getItem("role") || ""; // 'admin' 或 'vendor'
-let zoom = 1, onOk = null;
-
-// Lightbox 上下左右移動 (Pan) 變數
-let panX = 0, panY = 0, isDragging = false, startX = 0, startY = 0;
+let onOk = null;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -182,7 +184,18 @@ function fmtTime(tStr){
 }
 
 function driveId(u){u=String(u||"");const m=u.match(/\/d\/([\w-]+)|[?&]id=([\w-]+)/);return m?(m[1]||m[2]):(/^[\w-]{20,}$/.test(u)?u:"")}
+// 一般縮圖（卡片預覽、橫幅使用）
 function img(u,w=1600){const id=driveId(u);return id?`https://drive.google.com/thumbnail?id=${id}&sz=w${w}`:(u||"")}
+// 放大檢視用：依序嘗試 Google Drive「原始檔案」來源，最後才退回高解析縮圖
+function fullImgCandidates(u){
+  const id = driveId(u);
+  if(!id) return u ? [u] : [];
+  return [
+    `https://lh3.googleusercontent.com/d/${id}=s0`,          // 原始解析度（與 Drive 預覽器相同來源）
+    `https://drive.google.com/uc?export=view&id=${id}`,       // 原始檔案
+    `https://drive.google.com/thumbnail?id=${id}&sz=w4000`    // 最後備援：高解析縮圖
+  ];
+}
 function toast(t,ms=2200){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);if(ms)toast.t=setTimeout(()=>e.style.display="none",ms)}
 
 async function api(action, p={}){
@@ -316,9 +329,9 @@ function getStatsForZone(zoneId){
 function render(){
   $("demo").style.display = GAS_URL ? "none" : "block";
   
-  // Banner
+  // Banner（點擊放大時傳入原始連結，由 lightbox 自行取得原圖）
   const h = db.settings.heroImage, cap = db.settings.heroCaption || "展場全景圖";
-  $("banner").innerHTML = (h ? `<img src="${esc(img(h,2400))}" alt="展場全景圖" onclick="lightbox('${esc(img(h,2400))}')">` : 
+  $("banner").innerHTML = (h ? `<img src="${esc(img(h,2400))}" alt="展場全景圖" onclick="lightbox('${esc(h)}')">` : 
     `<div class="noimg"><div><div style="font-size:42px">🏛</div><b>展場全景圖</b><div style="font-size:13px;margin-top:6px">${role==='admin'?"請點上方「設定全景圖」連結":"尚未設定全景圖"}</div></div></div>`) + 
     `<div class="cap"><div class="eyebrow">HEALTHCARE EXPO 2026</div><h1>${esc(cap)}</h1></div>`;
 
@@ -431,7 +444,7 @@ function card(it){
     <div class="card-content">
       <div>
         <div class="preview">
-          ${u ? `<img src="${esc(u)}" alt="${esc(it.title)}" loading="lazy" onclick="lightbox('${esc(img(it.imageUrl,2400))}')" onerror="this.outerHTML='<div class=placeholder>圖片無法載入</div>'">` : `<div class="placeholder"><div style="font-size:38px">▧</div>尚未設定圖片</div>`}
+          ${u ? `<img src="${esc(u)}" alt="${esc(it.title)}" loading="lazy" onclick="lightbox('${esc(it.imageUrl)}')" onerror="this.outerHTML='<div class=placeholder>圖片無法載入</div>'">` : `<div class="placeholder"><div style="font-size:38px">▧</div>尚未設定圖片</div>`}
         </div>
         <div class="meta">${esc(it.description || "")}</div>
       </div>
@@ -663,101 +676,210 @@ $("heroBtn").onclick = () => modal("設定全景圖", `
 
 $("refreshBtn").onclick = async () => { toast("重新整理中…", 0); await load(); toast("已同步最新資料"); };
 
-/* ===== 圖檔放大 Lightbox：平移 (Pan) 與縮放控制 ===== */
-function updateTransform() {
-  const imgEl = $("lbImg");
-  imgEl.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+/* =====================================================================
+   圖檔放大 Lightbox（仿 Google Drive 預覽器）
+   - 載入「原始解析度」圖檔（不再使用縮圖），文字放大後依然清晰
+   - 縮放以「實際像素」為基準：100% = 原始大小，最大可放大到 800%
+   - 滾輪以滑鼠位置為中心縮放、拖曳平移、雙擊切換「符合畫面 / 原始大小」
+   - 手機支援雙指縮放、單指拖曳
+   ===================================================================== */
+const lbEl = $("lb"), lbImg = $("lbImg"), lbWrap = $("lbImgWrapper"), lbLoading = $("lbLoading");
+let natW = 0, natH = 0;        // 圖片原始像素尺寸
+let scale = 1, fitScale = 1;   // scale = 目前縮放比（相對於原始像素），fitScale = 符合畫面時的比例
+let panX = 0, panY = 0;
+let isDragging = false, startX = 0, startY = 0, moved = false;
+let pinchDist = 0, pinchScale = 1;
+let lbToken = 0;
+
+const MAX_SCALE = 8;
+const minScale = () => Math.min(fitScale * 0.5, 1);
+const maxScale = () => Math.max(MAX_SCALE, fitScale * 4);
+const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+
+function updateTransform(){
+  lbImg.style.transform = `translate(-50%,-50%) translate(${panX}px,${panY}px) scale(${scale})`;
+  $("zpct").textContent = Math.round(scale * 100) + "%";
+}
+
+function computeFit(){
+  if(!natW || !natH) return 1;
+  const vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.86;
+  return Math.min(vw / natW, vh / natH, 1);
+}
+
+function fitToScreen(){
+  fitScale = computeFit();
+  scale = fitScale; panX = 0; panY = 0;
+  updateTransform();
+}
+
+// 以螢幕座標 (cx, cy) 為中心縮放到 newScale
+function zoomAt(newScale, cx, cy){
+  newScale = clamp(newScale, minScale(), maxScale());
+  const rx = cx - window.innerWidth / 2;
+  const ry = cy - window.innerHeight / 2;
+  const k = newScale / scale;
+  panX = rx - (rx - panX) * k;
+  panY = ry - (ry - panY) * k;
+  scale = newScale;
+  updateTransform();
+}
+const zoomCenter = factor => zoomAt(scale * factor, window.innerWidth / 2, window.innerHeight / 2);
+
+// 依序嘗試多個來源載入原圖
+function loadFirstAvailable(urls, token){
+  return new Promise((resolve, reject) => {
+    let i = 0;
+    const tryNext = () => {
+      if(token !== lbToken) return reject(new Error("cancelled"));
+      if(i >= urls.length) return reject(new Error("fail"));
+      const im = new Image();
+      im.referrerPolicy = "no-referrer";
+      im.onload = () => {
+        if(im.naturalWidth > 0) resolve({url: urls[i], w: im.naturalWidth, h: im.naturalHeight});
+        else { i++; tryNext(); }
+      };
+      im.onerror = () => { i++; tryNext(); };
+      im.src = urls[i];
+    };
+    tryNext();
+  });
 }
 
 function lightbox(u){
-  $("lbImg").src = u;
-  zoom = 1;
-  panX = 0;
-  panY = 0;
+  const urls = fullImgCandidates(u);
+  if(!urls.length) return;
+  const token = ++lbToken;
+  natW = natH = 0;
+  lbImg.style.display = "none";
+  lbImg.removeAttribute("src");
+  lbLoading.style.display = "block";
+  lbEl.classList.add("show");
+  document.body.style.overflow = "hidden";
+
+  loadFirstAvailable(urls, token).then(r => {
+    if(token !== lbToken) return;
+    natW = r.w; natH = r.h;
+    lbImg.referrerPolicy = "no-referrer";
+    lbImg.style.width = natW + "px";
+    lbImg.style.height = natH + "px";
+    lbImg.src = r.url;
+    lbImg.style.display = "block";
+    lbLoading.style.display = "none";
+    fitToScreen();
+  }).catch(e => {
+    if(e.message === "cancelled") return;
+    lbLoading.textContent = "圖片無法載入，請確認 Google Drive 共用權限為「知道連結的任何人」";
+  });
+}
+
+function closeLightbox(){
+  lbToken++;
+  lbEl.classList.remove("show");
+  lbImg.removeAttribute("src");
+  lbImg.style.display = "none";
+  lbLoading.textContent = "原圖載入中…";
+  lbLoading.style.display = "none";
+  document.body.style.overflow = "";
+}
+
+$("zi").onclick = e => { e.stopPropagation(); zoomCenter(1.3); };
+$("zo").onclick = e => { e.stopPropagation(); zoomCenter(1 / 1.3); };
+$("zf").onclick = e => { e.stopPropagation(); fitToScreen(); };
+$("z1").onclick = e => { e.stopPropagation(); scale = 1; panX = 0; panY = 0; updateTransform(); };
+$("lc").onclick = e => { e.stopPropagation(); closeLightbox(); };
+
+// ESC 關閉、+/- 縮放
+window.addEventListener("keydown", e => {
+  if(!lbEl.classList.contains("show")) return;
+  if(e.key === "Escape") closeLightbox();
+  else if(e.key === "+" || e.key === "=") zoomCenter(1.25);
+  else if(e.key === "-") zoomCenter(1 / 1.25);
+  else if(e.key === "0") fitToScreen();
+  else if(e.key === "1") { scale = 1; panX = 0; panY = 0; updateTransform(); }
+});
+
+window.addEventListener("resize", () => {
+  if(!lbEl.classList.contains("show") || !natW) return;
+  const wasFit = Math.abs(scale - fitScale) < 0.0001;
+  fitScale = computeFit();
+  if(wasFit){ scale = fitScale; panX = 0; panY = 0; }
   updateTransform();
-  $("lb").classList.add("show");
-}
-
-function closeLightbox() {
-  $("lb").classList.remove("show");
-  $("lbImg").src = "";
-}
-
-$("zi").onclick = (e) => { e.stopPropagation(); zoom = Math.min(zoom + 0.3, 5); updateTransform(); };
-$("zo").onclick = (e) => { 
-  e.stopPropagation(); 
-  zoom = Math.max(zoom - 0.3, 0.5); 
-  if(zoom === 1) { panX = 0; panY = 0; }
-  updateTransform(); 
-};
-$("zr").onclick = (e) => { e.stopPropagation(); zoom = 1; panX = 0; panY = 0; updateTransform(); };
-$("lc").onclick = (e) => { e.stopPropagation(); closeLightbox(); };
-
-// 點擊背景空白處關閉
-$("lb").addEventListener("click", (e) => {
-  if (e.target.id === "lb" || e.target.id === "lbImgWrapper") {
-    closeLightbox();
-  }
 });
 
-// ESC 鍵關閉
-window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeLightbox();
-});
-
-// 滑鼠滾輪縮放圖片
-$("lbImgWrapper").addEventListener("wheel", (e) => {
+// 滑鼠滾輪：以游標位置為中心縮放
+lbWrap.addEventListener("wheel", e => {
   e.preventDefault();
-  if(e.deltaY < 0) {
-    zoom = Math.min(zoom + 0.2, 5);
-  } else {
-    zoom = Math.max(zoom - 0.2, 0.5);
-    if(zoom === 1) { panX = 0; panY = 0; }
-  }
-  updateTransform();
+  if(!natW) return;
+  const factor = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0018));
+  zoomAt(scale * factor, e.clientX, e.clientY);
 }, { passive: false });
 
-// 平移拖曳事件 (滑鼠與觸控)
-const wrapper = $("lbImgWrapper");
-
-wrapper.addEventListener("mousedown", (e) => {
-  if(e.target.tagName === 'BUTTON') return;
-  isDragging = true;
+// 滑鼠拖曳平移
+lbWrap.addEventListener("mousedown", e => {
+  if(e.button !== 0) return;
+  isDragging = true; moved = false;
   startX = e.clientX - panX;
   startY = e.clientY - panY;
 });
-
-window.addEventListener("mousemove", (e) => {
+window.addEventListener("mousemove", e => {
   if(!isDragging) return;
-  panX = e.clientX - startX;
-  panY = e.clientY - startY;
+  const nx = e.clientX - startX, ny = e.clientY - startY;
+  if(Math.abs(nx - panX) + Math.abs(ny - panY) > 2) moved = true;
+  panX = nx; panY = ny;
   updateTransform();
 });
+window.addEventListener("mouseup", () => { isDragging = false; });
 
-window.addEventListener("mouseup", () => {
-  isDragging = false;
+// 點擊空白處關閉（拖曳後不觸發）；雙擊圖片切換「符合畫面 / 原始大小」
+lbWrap.addEventListener("click", e => {
+  if(moved){ moved = false; return; }
+  if(e.target === lbWrap) closeLightbox();
+});
+lbWrap.addEventListener("dblclick", e => {
+  if(!natW) return;
+  if(Math.abs(scale - fitScale) < 0.01 && fitScale < 1) zoomAt(1, e.clientX, e.clientY);
+  else if(Math.abs(scale - fitScale) < 0.01) zoomAt(2, e.clientX, e.clientY);
+  else fitToScreen();
 });
 
-wrapper.addEventListener("touchstart", (e) => {
-  if(e.touches.length === 1) {
-    isDragging = true;
+// 觸控：單指拖曳、雙指縮放
+const touchDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+lbWrap.addEventListener("touchstart", e => {
+  if(e.touches.length === 1){
+    isDragging = true; moved = false;
+    startX = e.touches[0].clientX - panX;
+    startY = e.touches[0].clientY - panY;
+  } else if(e.touches.length === 2){
+    isDragging = false;
+    pinchDist = touchDist(e.touches);
+    pinchScale = scale;
+  }
+}, { passive: true });
+lbWrap.addEventListener("touchmove", e => {
+  e.preventDefault();
+  if(e.touches.length === 1 && isDragging){
+    panX = e.touches[0].clientX - startX;
+    panY = e.touches[0].clientY - startY;
+    moved = true;
+    updateTransform();
+  } else if(e.touches.length === 2 && pinchDist){
+    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    zoomAt(pinchScale * touchDist(e.touches) / pinchDist, cx, cy);
+  }
+}, { passive: false });
+lbWrap.addEventListener("touchend", e => {
+  if(e.touches.length === 0){ isDragging = false; pinchDist = 0; }
+  else if(e.touches.length === 1){
+    pinchDist = 0; isDragging = true;
     startX = e.touches[0].clientX - panX;
     startY = e.touches[0].clientY - panY;
   }
-}, { passive: true });
-
-window.addEventListener("touchmove", (e) => {
-  if(!isDragging || e.touches.length !== 1) return;
-  panX = e.touches[0].clientX - startX;
-  panY = e.touches[0].clientY - startY;
-  updateTransform();
-}, { passive: true });
-
-window.addEventListener("touchend", () => {
-  isDragging = false;
 });
 
 load();
 </script>
 </body>
 </html>
+
